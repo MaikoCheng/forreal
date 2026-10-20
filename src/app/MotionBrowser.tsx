@@ -15,6 +15,7 @@ const themeKeywords: Record<string, string[]> = {
 };
 
 const tabs = ["Alle moties", "Recente moties", "Per thema"];
+const pageEllipsis = "...";
 
 function themesForMotion(motion: Motion): string[] {
   const subject = motion.subject.toLocaleLowerCase("nl-NL");
@@ -49,6 +50,20 @@ export default function MotionBrowser({ motions }: { motions: Motion[] }) {
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
   );
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1)
+    .filter((pageNumber) => (
+      pageNumber === 1
+      || pageNumber === totalPages
+      || Math.abs(pageNumber - currentPage) <= 1
+    ))
+    .reduce<(number | string)[]>((pages, pageNumber, index, filteredPages) => {
+      const previousPage = filteredPages[index - 1];
+      if (previousPage && pageNumber - previousPage > 1) {
+        pages.push(pageEllipsis);
+      }
+      pages.push(pageNumber);
+      return pages;
+    }, []);
 
   function resetPage() {
     setPage(1);
@@ -169,6 +184,20 @@ export default function MotionBrowser({ motions }: { motions: Motion[] }) {
               Volgende →
             </button>
           </div>
+          <nav className="flex flex-wrap items-center justify-center gap-1" aria-label="Paginanavigatie">
+            {pageNumbers.map((pageNumber, index) => typeof pageNumber === "string" ? (
+              <span key={`ellipsis-${index}`} className="px-2 text-sm text-slate-400">...</span>
+            ) : (
+              <button
+                key={pageNumber}
+                onClick={() => setPage(pageNumber)}
+                aria-current={currentPage === pageNumber ? "page" : undefined}
+                className={`grid size-9 place-items-center rounded-lg text-sm font-semibold transition ${currentPage === pageNumber ? "bg-blue-600 text-white" : "border border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-blue-600"}`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+          </nav>
         </div>
       )}
     </section>
