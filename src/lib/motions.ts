@@ -25,17 +25,19 @@ const defaultApiUrl = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0";
 
 export async function getMotions(startOfYear: string): Promise<Motion[]> {
   const apiUrl = process.env.TWEEDEKAMER_API_URL ?? defaultApiUrl;
-  const query = new URLSearchParams({
-    $filter: `Soort eq 'Motie' and Verwijderd eq false and GestartOp ge ${startOfYear}`,
-    $orderby: "GestartOp desc",
-    $top: "250",
-    $select: "Id,Nummer,Onderwerp,GestartOp,Status,Vergaderjaar",
-  });
-  let nextUrl: string | undefined = `${apiUrl.replace(/\/$/, "")}/Zaak?${query}`;
   const motions: Motion[] = [];
+  const pageSize = 250;
+  let skip = 0;
 
-  while (nextUrl) {
-    const response = await fetch(nextUrl, {
+  while (true) {
+    const query = new URLSearchParams({
+      $filter: `Soort eq 'Motie' and Verwijderd eq false and GestartOp ge ${startOfYear}`,
+      $orderby: "GestartOp desc",
+      $top: String(pageSize),
+      $skip: String(skip),
+      $select: "Id,Nummer,Onderwerp,GestartOp,Status,Vergaderjaar",
+    });
+    const response = await fetch(`${apiUrl.replace(/\/$/, "")}/Zaak?${query}`, {
       next: { revalidate: 60 },
       headers: { Accept: "application/json" },
     });
@@ -53,7 +55,8 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
       status: motion.Status,
       meetingYear: motion.Vergaderjaar,
     })));
-    nextUrl = data["@odata.nextLink"];
+    if (data.value.length < pageSize) break;
+    skip += pageSize;
   }
 
   return motions;

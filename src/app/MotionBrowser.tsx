@@ -5,13 +5,15 @@ import { formatMotionDate, type Motion } from "@/lib/motions";
 
 const themeKeywords: Record<string, string[]> = {
   Wonen: ["woon", "woning", "huur", "huisvesting"],
-  Zorg: ["zorg", "medisch", "ziekenhuis", "gezondheid", "patiënt"],
-  Onderwijs: ["onderwijs", "school", "student", "leraar", "opleiding"],
+  Zorg: ["zorg", "medisch", "ziekenhuis", "gezondheid", "patiënt", "verpleging", "medicatie", "dokter", "arts", "verpleegkundige" , "gezondheidszorg", "zorgverzekering", "zorgtoeslag", "zorgkosten", "zorginstelling", "zorgverlener", "zorgbehoefte", "zorgbeleid", "zorgsysteem", "zorgkwaliteit", "zorginnovatie", "zorgtechnologie"],
+  Onderwijs: ["onderwijs", "school", "student", "leraar", "opleiding", "universiteit", "basisschool", "middelbare school", "voortgezet onderwijs", "hoger onderwijs", "onderwijsbeleid", "onderwijskwaliteit", "onderwijsinnovatie", "onderwijstechnologie", "school"],
   Klimaat: ["klimaat", "stikstof", "energie", "duurzaam", "natuur"],
   Migratie: ["migratie", "asiel", "vluchteling", "inburgering"],
   Veiligheid: ["veiligheid", "politie", "justitie", "criminaliteit"],
   Economie: ["economie", "werk", "arbeid", "belasting", "ondernemer"],
   Defensie: ["defensie", "militair", "leger", "navo"],
+  Cultuur: ["cultuur", "kunst", "theater", "muziek", "film"],
+
 };
 
 const tabs = ["Alle moties", "Recente moties", "Per thema"];
@@ -31,6 +33,8 @@ export default function MotionBrowser() {
   const [activeTab, setActiveTab] = useState(tabs[0]);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -51,12 +55,15 @@ export default function MotionBrowser() {
       const matchesTab = activeTab !== "Recente moties" || motions.indexOf(motion) < 20;
       const themes = themesForMotion(motion);
       const matchesTheme = selectedThemes.length === 0 || selectedThemes.some((theme) => themes.includes(theme));
+      const motionDate = motion.startedAt?.slice(0, 10) ?? "";
+      const matchesStartDate = !startDate || motionDate >= startDate;
+      const matchesEndDate = !endDate || motionDate <= endDate;
       const matchesSearch = !normalizedSearch
         || motion.subject.toLocaleLowerCase("nl-NL").includes(normalizedSearch)
         || motion.number.toLocaleLowerCase("nl-NL").includes(normalizedSearch);
-      return matchesTab && matchesTheme && matchesSearch;
+      return matchesTab && matchesTheme && matchesStartDate && matchesEndDate && matchesSearch;
     });
-  }, [activeTab, motions, search, selectedThemes]);
+  }, [activeTab, endDate, motions, search, selectedThemes, startDate]);
 
   const totalPages = Math.max(1, Math.ceil(visibleMotions.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -133,11 +140,36 @@ export default function MotionBrowser() {
             {theme}
           </button>
         ))}
-        {(selectedThemes.length > 0 || search) && (
-          <button onClick={() => { setSelectedThemes([]); setSearch(""); resetPage(); }} className="ml-2 text-xs font-semibold text-blue-600 hover:text-blue-800">
+        {(selectedThemes.length > 0 || search || startDate || endDate) && (
+          <button onClick={() => { setSelectedThemes([]); setSearch(""); setStartDate(""); setEndDate(""); resetPage(); }} className="ml-2 text-xs font-semibold text-blue-600 hover:text-blue-800">
             Wis filters
           </button>
         )}
+      </div>
+
+      <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <label htmlFor="start-date" className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">Vanaf</label>
+          <input
+            id="start-date"
+            type="date"
+            value={startDate}
+            onChange={(event) => { setStartDate(event.target.value); resetPage(); }}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+        </div>
+        <div className="flex-1">
+          <label htmlFor="end-date" className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">Tot en met</label>
+          <input
+            id="end-date"
+            type="date"
+            value={endDate}
+            min={startDate || undefined}
+            onChange={(event) => { setEndDate(event.target.value); resetPage(); }}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+        </div>
+        <p className="text-xs text-slate-400 sm:max-w-xs">Filter moties op de datum waarop ze zijn gestart.</p>
       </div>
 
       <p className="mb-3 text-sm text-slate-500">{visibleMotions.length.toLocaleString("nl-NL")} resultaten</p>
