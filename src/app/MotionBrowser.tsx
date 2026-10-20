@@ -27,6 +27,8 @@ export default function MotionBrowser({ motions }: { motions: Motion[] }) {
   const [activeTab, setActiveTab] = useState(tabs[0]);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const visibleMotions = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase("nl-NL");
@@ -41,7 +43,19 @@ export default function MotionBrowser({ motions }: { motions: Motion[] }) {
     });
   }, [activeTab, motions, search, selectedThemes]);
 
+  const totalPages = Math.max(1, Math.ceil(visibleMotions.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedMotions = visibleMotions.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  function resetPage() {
+    setPage(1);
+  }
+
   function toggleTheme(theme: string) {
+    resetPage();
     setSelectedThemes((current) => current.includes(theme)
       ? current.filter((item) => item !== theme)
       : [...current, theme]);
@@ -59,7 +73,7 @@ export default function MotionBrowser({ motions }: { motions: Motion[] }) {
           <span className="sr-only">Zoek moties</span>
           <input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => { setSearch(event.target.value); resetPage(); }}
             placeholder="Zoek op onderwerp of nummer"
             className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
@@ -70,7 +84,7 @@ export default function MotionBrowser({ motions }: { motions: Motion[] }) {
         {tabs.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => { setActiveTab(tab); resetPage(); }}
             className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm font-semibold transition ${activeTab === tab ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-900"}`}
           >
             {tab}
@@ -91,7 +105,7 @@ export default function MotionBrowser({ motions }: { motions: Motion[] }) {
           </button>
         ))}
         {(selectedThemes.length > 0 || search) && (
-          <button onClick={() => { setSelectedThemes([]); setSearch(""); }} className="ml-2 text-xs font-semibold text-blue-600 hover:text-blue-800">
+          <button onClick={() => { setSelectedThemes([]); setSearch(""); resetPage(); }} className="ml-2 text-xs font-semibold text-blue-600 hover:text-blue-800">
             Wis filters
           </button>
         )}
@@ -104,7 +118,7 @@ export default function MotionBrowser({ motions }: { motions: Motion[] }) {
         </div>
       ) : (
         <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
-          {visibleMotions.map((motion) => (
+          {paginatedMotions.map((motion) => (
             <article key={motion.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="mb-1 font-mono text-xs text-slate-400">Motie {motion.number}</p>
@@ -119,6 +133,42 @@ export default function MotionBrowser({ motions }: { motions: Motion[] }) {
               </div>
             </article>
           ))}
+        </div>
+      )}
+      {visibleMotions.length > 0 && (
+        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <label className="flex items-center gap-2 text-sm text-slate-500">
+            <span>Per pagina</span>
+            <select
+              value={pageSize}
+              onChange={(event) => {
+                setPageSize(Number(event.target.value));
+                resetPage();
+              }}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            >
+              {[10, 20, 30].map((size) => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </label>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={currentPage === 1}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ← Vorige
+            </button>
+            <span className="min-w-24 text-center text-sm text-slate-500">
+              Pagina {currentPage} van {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Volgende →
+            </button>
+          </div>
         </div>
       )}
     </section>
