@@ -9,6 +9,7 @@ export type Motion = {
 
 type ODataResponse<T> = {
   value: T[];
+  "@odata.nextLink"?: string;
 };
 
 type ApiMotion = {
@@ -27,27 +28,35 @@ export async function getMotions(): Promise<Motion[]> {
   const query = new URLSearchParams({
     $filter: "Soort eq 'Motie' and Verwijderd eq false",
     $orderby: "GestartOp desc",
-    $top: "6",
+    $top: "250",
     $select: "Id,Nummer,Onderwerp,GestartOp,Status,Vergaderjaar",
   });
-  const response = await fetch(`${apiUrl.replace(/\/$/, "")}/Zaak?${query}`, {
-    next: { revalidate: 60 },
-    headers: { Accept: "application/json" },
-  });
+  let nextUrl: string | undefined = `${apiUrl.replace(/\/$/, "")}/Zaak?${query}`;
+  const motions: Motion[] = [];
 
-  if (!response.ok) {
-    throw new Error(`Tweede Kamer API returned ${response.status}`);
+  while (nextUrl) {
+    const response = await fetch(nextUrl, {
+      next: { revalidate: 60 },
+      headers: { Accept: "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Tweede Kamer API returned ${response.status}`);
+    }
+
+    const data = (await response.json()) as ODataResponse<ApiMotion>;
+    motions.push(...data.value.map((motion) => ({
+      id: motion.Id,
+      number: motion.Nummer,
+      subject: motion.Onderwerp ?? "Onderwerp niet beschikbaar",
+      startedAt: motion.GestartOp,
+      status: motion.Status,
+      meetingYear: motion.Vergaderjaar,
+    })));
+    nextUrl = data["@odata.nextLink"];
   }
 
-  const data = (await response.json()) as ODataResponse<ApiMotion>;
-  return data.value.map((motion) => ({
-    id: motion.Id,
-    number: motion.Nummer,
-    subject: motion.Onderwerp ?? "Onderwerp niet beschikbaar",
-    startedAt: motion.GestartOp,
-    status: motion.Status,
-    meetingYear: motion.Vergaderjaar,
-  }));
+  return motions;
 }
 
 export function formatMotionDate(value: string | null): string {

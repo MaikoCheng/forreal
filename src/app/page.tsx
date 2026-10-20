@@ -1,35 +1,6 @@
 import Link from "next/link";
-import { formatMotionDate, getMotions, type Motion } from "@/lib/motions";
-
-const parties = [
-  { name: "PVV", color: "#164e63", stance: "Voor", votes: "18 / 18" },
-  { name: "GroenLinks-PvdA", color: "#be123c", stance: "Voor", votes: "25 / 25" },
-  { name: "VVD", color: "#f59e0b", stance: "Tegen", votes: "22 / 24" },
-  { name: "NSC", color: "#0f766e", stance: "Verdeeld", votes: "9 / 20" },
-  { name: "D66", color: "#f97316", stance: "Voor", votes: "9 / 9" },
-  { name: "BBB", color: "#65a30d", stance: "Tegen", votes: "7 / 7" },
-];
-
-function MotionList({ motions }: { motions: Motion[] }) {
-  if (motions.length === 0) {
-    return <p className="p-5 text-sm text-slate-500">Er zijn geen moties gevonden.</p>;
-  }
-
-  return (
-    <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
-      {motions.map((motion) => (
-        <article key={motion.id} className="flex items-center justify-between gap-4 p-5">
-          <div className="min-w-0">
-            <p className="mb-1 font-mono text-xs text-slate-400">Motie {motion.number}</p>
-            <h3 className="font-semibold text-slate-900">{motion.subject}</h3>
-            <p className="mt-2 text-xs text-slate-500">{formatMotionDate(motion.startedAt)} · {motion.status ?? "Status onbekend"}</p>
-          </div>
-          <span className="shrink-0 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">{motion.meetingYear ?? "Onbekend"}</span>
-        </article>
-      ))}
-    </div>
-  );
-}
+import MotionBrowser from "./MotionBrowser";
+import { getMotions, type Motion } from "@/lib/motions";
 
 export default async function Home() {
   let motions: Motion[] = [];
@@ -101,38 +72,13 @@ export default async function Home() {
         ))}
       </section>
 
-      <section id="moties" className="grid gap-10 py-14 lg:grid-cols-[1.1fr_0.9fr]">
-        <div>
-          <div className="mb-6 flex items-end justify-between">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.15em] text-blue-600">Recente moties</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">Wat gebeurde er vandaag?</h2>
-            </div>
-            <button className="hidden text-sm font-semibold text-blue-600 sm:block">Alles bekijken →</button>
+      {apiError ? (
+        <section id="moties" className="py-14">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
+            De moties konden niet worden opgehaald uit de Tweede Kamer API.
           </div>
-          {apiError ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
-              De moties konden niet worden opgehaald uit de Tweede Kamer API.
-            </div>
-          ) : <MotionList motions={motions} />}
-        </div>
-        <div id="partijen">
-          <div className="mb-6">
-            <p className="text-sm font-bold uppercase tracking-[0.15em] text-blue-600">Partijen</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">Stemgedrag per fractie</h2>
-          </div>
-          <div className="space-y-3">
-            {parties.map((party) => (
-              <div key={party.name} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5">
-                <span className="size-3 rounded-full" style={{ backgroundColor: party.color }} />
-                <span className="flex-1 text-sm font-semibold text-slate-800">{party.name}</span>
-                <span className="text-xs text-slate-400">{party.votes}</span>
-                <span className={`w-16 text-right text-xs font-bold ${party.stance === "Voor" ? "text-emerald-600" : party.stance === "Tegen" ? "text-rose-600" : "text-amber-600"}`}>{party.stance}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      ) : <MotionBrowser motions={motions} />}
 
       <footer className="flex flex-col gap-3 border-t border-slate-200 py-8 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
         <p>PolitiQ · Onafhankelijk inzicht in parlementaire data</p>
