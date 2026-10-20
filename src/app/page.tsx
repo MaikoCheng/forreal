@@ -1,17 +1,7 @@
 import Link from "next/link";
 import MotionBrowser from "./MotionBrowser";
-import { getMotions, type Motion } from "@/lib/motions";
 
 export default async function Home() {
-  let motions: Motion[] = [];
-  let apiError = false;
-
-  try {
-    motions = await getMotions();
-  } catch {
-    apiError = true;
-  }
-
   return (
     <main className="mx-auto min-h-screen max-w-[1440px] px-5 py-6 sm:px-8 lg:px-12">
       <header className="flex items-center justify-between border-b border-slate-200 pb-5">
@@ -48,7 +38,7 @@ export default async function Home() {
         <div className="relative overflow-hidden rounded-3xl bg-blue-600 p-8 text-white sm:p-10">
           <div className="absolute -right-10 -top-20 size-64 rounded-full border-[32px] border-blue-500/60" />
           <p className="relative text-sm font-medium text-blue-100">Laatste plenaire stemming</p>
-          <h2 className="relative mt-4 max-w-md text-3xl font-bold leading-tight">{motions[0]?.subject ?? "De laatste moties uit de Tweede Kamer"}</h2>
+          <h2 className="relative mt-4 max-w-md text-3xl font-bold leading-tight">De laatste moties uit de Tweede Kamer</h2>
           <div className="relative mt-8 flex items-end justify-between gap-4">
             <div>
               <p className="text-5xl font-bold">78%</p>
@@ -72,13 +62,7 @@ export default async function Home() {
         ))}
       </section>
 
-      {apiError ? (
-        <section id="moties" className="py-14">
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
-            De moties konden niet worden opgehaald uit de Tweede Kamer API.
-          </div>
-        </section>
-      ) : <MotionBrowser motions={motions} />}
+      <MotionBrowser />
 
       <footer className="flex flex-col gap-3 border-t border-slate-200 py-8 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
         <p>PolitiQ · Onafhankelijk inzicht in parlementaire data</p>

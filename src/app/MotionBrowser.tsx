@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatMotionDate, type Motion } from "@/lib/motions";
 
 const themeKeywords: Record<string, string[]> = {
@@ -24,12 +24,26 @@ function themesForMotion(motion: Motion): string[] {
     .map(([theme]) => theme);
 }
 
-export default function MotionBrowser({ motions }: { motions: Motion[] }) {
+export default function MotionBrowser() {
+  const [motions, setMotions] = useState<Motion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
   const [activeTab, setActiveTab] = useState(tabs[0]);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    fetch("/api/motions")
+      .then(async (response) => {
+        if (!response.ok) throw new Error("API request failed");
+        return response.json() as Promise<{ motions: Motion[] }>;
+      })
+      .then((data) => setMotions(data.motions))
+      .catch(() => setApiError(true))
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const visibleMotions = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase("nl-NL");
@@ -127,7 +141,15 @@ export default function MotionBrowser({ motions }: { motions: Motion[] }) {
       </div>
 
       <p className="mb-3 text-sm text-slate-500">{visibleMotions.length.toLocaleString("nl-NL")} resultaten</p>
-      {visibleMotions.length === 0 ? (
+      {isLoading ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+          Moties worden opgehaald...
+        </div>
+      ) : apiError ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center text-sm text-rose-700">
+          De moties konden niet worden opgehaald uit de Tweede Kamer API.
+        </div>
+      ) : visibleMotions.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
           Geen moties gevonden voor deze filters.
         </div>
