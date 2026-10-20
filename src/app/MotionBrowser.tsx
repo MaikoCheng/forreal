@@ -6,19 +6,19 @@ import { formatMotionDate, type Motion, type MotionDetail } from "@/lib/motions"
 const themeKeywords: Record<string, string[]> = {
   Wonen: ["woon", "woning", "huur", "huisvesting"],
   Zorg: ["zorg", "medisch", "ziekenhuis", "gezondheid", "patiënt", "verpleging", "medicatie", "dokter", "arts", "verpleegkundige" , "gezondheidszorg", "zorgverzekering", "zorgtoeslag", "zorgkosten", "zorginstelling", "zorgverlener", "zorgbehoefte", "zorgbeleid", "zorgsysteem", "zorgkwaliteit", "zorginnovatie", "zorgtechnologie", "eigen risico", "ggz", "thuiszorg", "ouderenzorg", "jeugdzorg", "gehandicaptenzorg", "preventieve zorg", "curatieve zorg", "palliatieve zorg", "mentale gezondheid", "psychische zorg", "gezondheidsbevordering", "gezondheidsbeleid"],
-  Onderwijs: ["onderwijs", "school", "student", "leraar", "opleiding", "universiteit", "basisschool", "middelbare school", "voortgezet onderwijs", "hoger onderwijs", "onderwijsbeleid", "onderwijskwaliteit", "onderwijsinnovatie", "onderwijstechnologie", "school"],
-  Klimaat: ["klimaat", "stikstof", "energie", "duurzaam", "natuur", "milieu", "broeikasgas", "klimaatverandering", "klimaatbeleid", "klimaatadaptatie", "klimaatmitigatie", "klimaatwet", "klimaatakkoord", "klimaatcrisis", "klimaatimpact", "klimaatfinanciering", "klimaatonderzoek", "klimaatbewustzijn"],
-  Migratie: ["migratie", "asiel", "vluchteling", "inburgering"],
-  Veiligheid: ["veiligheid", "politie", "justitie", "criminaliteit"],
+  Onderwijs: ["onderwijs", "school", "student", "leraar", "opleiding", "universiteit", "basisschool", "middelbare school", "voortgezet onderwijs", "hoger onderwijs", "onderwijsbeleid", "onderwijskwaliteit", "onderwijsinnovatie", "onderwijstechnologie", "school", "scholen"],
+  Klimaat: ["klimaat", "stikstof", "energie", "duurzaam", "natuur", "milieu", "broeikasgas", "klimaatverandering", "klimaatbeleid", "klimaatadaptatie", "klimaatmitigatie", "klimaatwet", "klimaatakkoord", "klimaatcrisis", "klimaatimpact", "klimaatfinanciering", "klimaatonderzoek", "klimaatbewustzijn", "fossiele brandstoffen", "hernieuwbare energie", "energie-efficiëntie", "energieopwekking", "energievoorziening", "energiebeleid", "energietransitie", "energieverbruik", "energieprijzen", "energiearmoede", "energiebesparing", "energielabels", "energietarieven", "fossielebrandstofsubsidies"],
+  Migratie: ["migratie", "asiel", "vluchteling", "inburgering", "immigratie", "emigratie", "migranten", "migratiebeleid", "migratiestromen", "migratiecrisis", "migratievraagstukken", "migratieonderzoek", "migratiegeschiedenis", "migratie-impact", "migratie-integratie", "migratie-veiligheid", "migratie-economie", "migratie-cultuur", "migratie-rechten", "migratie-gezondheid", "vluchtelingenopvang", "asielzoekerscentra", "asielprocedure", "asielbeleid", "asielwetgeving", "asielzoekersrechten", "asielzoekersstatus", "asielzoekersopvangcapaciteit", "azc", "ter apel", "vluchtelingenstatus", "vluchtelingenopvangbeleid", "vluchtelingenintegratie", "vluchtelingenrechten", "vluchtelingengezondheid", "vluchtelingentoegang", "vluchtelingentoewijzing"],
   Economie: ["economie", "werk", "arbeid", "belasting", "ondernemer"],
-  Defensie: ["defensie", "militair", "leger", "navo"],
-  Cultuur: ["cultuur", "kunst", "theater", "muziek", "film"],
-  Abortus: ["abortus", "zwangerschap", "reproductieve rechten"],
+  Defensie: ["defensie", "militair", "leger", "navo", "oorlog", "veiligheid", "terrorisme", "veiligheidsbeleid", "defensiebeleid", "militaire operaties", "militaire uitgaven", "militaire technologie", "militaire training", "militaire samenwerking", "internationale veiligheid", "nationale veiligheid", "veiligheidsrisico's", "veiligheidsmaatregelen", "veiligheidsincidenten", "veiligheidsdiensten", "veiligheidsinfrastructuur"],
+  Cultuur: ["cultuur", "kunst", "theater", "muziek", "film", "literatuur", "cultureel erfgoed", "culturele diversiteit", "culturele participatie", "culturele instellingen", "culturele evenementen", "culturele subsidies", "culturele beleidsvorming", "culturele educatie", "culturele innovatie", "culturele samenwerking", "culturele diplomatie", "culturele identiteit", "culturele expressie"],
+  Abortus: ["abortus", "zwangerschap", "reproductieve rechten", "abortuswetgeving", "abortuskliniek", "abortusbeleid", "abortuszorg", "abortusprocedure", "abortusklinieken", "abortuskliniekbeleid", "abortuskliniektoegang", "abortuskliniekfinanciering", "abortuskliniekveiligheid", "abortuskliniekprivacy", "abortuskliniekondersteuning", "abortuskliniekvoorlichting", "abortuskliniekonderzoek", "abortuskliniekinnovatie"],
   IsraelPalestina: ["israel", "palestina", "gaza", "westelijke jordaanoever", "jeruzalem"],
 };
 
 const tabs = ["Alle moties", "Recente moties", "Per thema"];
 const pageEllipsis = "...";
+const voteFilters = ["Alle", "Al gestemd", "Nog niet gestemd"] as const;
 
 function themesForMotion(motion: Motion): string[] {
   const subject = motion.subject.toLocaleLowerCase("nl-NL");
@@ -36,6 +36,7 @@ export default function MotionBrowser() {
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [voteFilter, setVoteFilter] = useState<(typeof voteFilters)[number]>("Alle");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedMotion, setSelectedMotion] = useState<MotionDetail | null>(null);
@@ -62,12 +63,15 @@ export default function MotionBrowser() {
       const motionDate = motion.startedAt?.slice(0, 10) ?? "";
       const matchesStartDate = !startDate || motionDate >= startDate;
       const matchesEndDate = !endDate || motionDate <= endDate;
+      const matchesVoteFilter = voteFilter === "Alle"
+        || (voteFilter === "Al gestemd" && motion.hasVote)
+        || (voteFilter === "Nog niet gestemd" && !motion.hasVote);
       const matchesSearch = !normalizedSearch
         || motion.subject.toLocaleLowerCase("nl-NL").includes(normalizedSearch)
         || motion.number.toLocaleLowerCase("nl-NL").includes(normalizedSearch);
-      return matchesTab && matchesTheme && matchesStartDate && matchesEndDate && matchesSearch;
+      return matchesTab && matchesTheme && matchesStartDate && matchesEndDate && matchesVoteFilter && matchesSearch;
     });
-  }, [activeTab, endDate, motions, search, selectedThemes, startDate]);
+  }, [activeTab, endDate, motions, search, selectedThemes, startDate, voteFilter]);
 
   const totalPages = Math.max(1, Math.ceil(visibleMotions.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -159,11 +163,25 @@ export default function MotionBrowser() {
             {theme}
           </button>
         ))}
-        {(selectedThemes.length > 0 || search || startDate || endDate) && (
-          <button onClick={() => { setSelectedThemes([]); setSearch(""); setStartDate(""); setEndDate(""); resetPage(); }} className="ml-2 text-xs font-semibold text-blue-600 hover:text-blue-800">
+        {(selectedThemes.length > 0 || search || startDate || endDate || voteFilter !== "Alle") && (
+          <button onClick={() => { setSelectedThemes([]); setSearch(""); setStartDate(""); setEndDate(""); setVoteFilter("Alle"); resetPage(); }} className="ml-2 text-xs font-semibold text-blue-600 hover:text-blue-800">
             Wis filters
           </button>
         )}
+      </div>
+
+      <div className="mb-7 flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-xs font-bold uppercase tracking-wider text-slate-400">Stemming</span>
+        {voteFilters.map((filter) => (
+          <button
+            key={filter}
+            onClick={() => { setVoteFilter(filter); resetPage(); }}
+            aria-pressed={voteFilter === filter}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${voteFilter === filter ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"}`}
+          >
+            {filter}
+          </button>
+        ))}
       </div>
 
       <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-end">
@@ -216,12 +234,13 @@ export default function MotionBrowser() {
               <div className="min-w-0">
                 <p className="mb-1 font-mono text-xs text-slate-400">Motie {motion.number}</p>
                 <h3 className="font-semibold text-slate-900">{motion.subject}</h3>
-                <p className="mt-2 text-xs text-slate-500">{formatMotionDate(motion.startedAt)} · {motion.status ?? "Status onbekend"}</p>
+                <p className="mt-2 text-xs text-slate-500">{formatMotionDate(motion.startedAt)}</p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-1.5">
                 {themesForMotion(motion).map((theme) => (
                   <span key={theme} className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{theme}</span>
                 ))}
+                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${motion.outcome === "Aangenomen" ? "bg-emerald-50 text-emerald-700" : motion.outcome === "Niet aangenomen" ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600"}`}>{motion.outcome}</span>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{motion.meetingYear ?? "Onbekend"}</span>
               </div>
             </button>
@@ -299,8 +318,12 @@ export default function MotionBrowser() {
                 <div className="mt-6 flex flex-wrap gap-2 text-xs text-slate-500">
                   <span className="rounded-full bg-slate-100 px-3 py-1.5 font-mono">{selectedMotion.number}</span>
                   <span className="rounded-full bg-slate-100 px-3 py-1.5">{formatMotionDate(selectedMotion.startedAt)}</span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1.5">{selectedMotion.status ?? "Status onbekend"}</span>
+                  <span className={`rounded-full px-3 py-1.5 font-semibold ${selectedMotion.outcome === "Aangenomen" ? "bg-emerald-50 text-emerald-700" : selectedMotion.outcome === "Niet aangenomen" ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600"}`}>{selectedMotion.outcome}</span>
                 </div>
+                <section className="mt-8">
+                  <h3 className="text-lg font-bold text-slate-950">Tekst van de motie</h3>
+                  <p className="mt-3 whitespace-pre-line rounded-2xl bg-slate-50 p-5 text-sm leading-7 text-slate-700">{selectedMotion.text}</p>
+                </section>
                 <section className="mt-8">
                   <h3 className="text-lg font-bold text-slate-950">Stemmingen per partij</h3>
                   {selectedMotion.votes.length === 0 ? (

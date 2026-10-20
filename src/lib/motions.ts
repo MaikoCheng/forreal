@@ -5,6 +5,8 @@ export type Motion = {
   startedAt: string | null;
   status: string | null;
   meetingYear: string | null;
+  hasVote: boolean;
+  outcome: "Aangenomen" | "Niet aangenomen" | "Nog niet gestemd";
 };
 
 export type MotionVote = {
@@ -14,6 +16,7 @@ export type MotionVote = {
 
 export type MotionDetail = Motion & {
   votes: MotionVote[];
+  text: string;
 };
 
 type ODataResponse<T> = {
@@ -28,6 +31,8 @@ type ApiMotion = {
   GestartOp: string | null;
   Status: string | null;
   Vergaderjaar: string | null;
+  Besluit?: ApiDecision[];
+  Document?: ApiDocument[];
 };
 
 type ApiVote = {
@@ -41,7 +46,20 @@ type ApiDecision = {
   Stemming?: ApiVote[];
 };
 
+type ApiDocument = {
+  Soort: string | null;
+  DocumentNummer: string | null;
+};
+
 const defaultApiUrl = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0";
+
+function getOutcome(decisions: ApiDecision[] | undefined): Motion["outcome"] {
+  const vote = decisions?.find((decision) => decision.BesluitSoort?.startsWith("Stemmen"));
+  if (!vote) return "Nog niet gestemd";
+  return vote.BesluitSoort?.toLocaleLowerCase("nl-NL").includes("aangenomen")
+    ? "Aangenomen"
+    : "Niet aangenomen";
+}
 
 export async function getMotions(startOfYear: string): Promise<Motion[]> {
   const apiUrl = process.env.TWEEDEKAMER_API_URL ?? defaultApiUrl;
@@ -56,6 +74,7 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
       $top: String(pageSize),
       $skip: String(skip),
       $select: "Id,Nummer,Onderwerp,GestartOp,Status,Vergaderjaar",
+      $expand: "Besluit($select=BesluitSoort)",
     });
     const response = await fetch(`${apiUrl.replace(/\/$/, "")}/Zaak?${query}`, {
       next: { revalidate: 60 },
@@ -74,6 +93,8 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
       startedAt: motion.GestartOp,
       status: motion.Status,
       meetingYear: motion.Vergaderjaar,
+      hasVote: (motion.Besluit ?? []).some((decision) => decision.BesluitSoort?.startsWith("Stemmen")),
+      outcome: getOutcome(motion.Besluit),
     })));
     if (data.value.length < pageSize) break;
     skip += pageSize;
@@ -85,7 +106,7 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
 export async function getMotionDetail(id: string): Promise<MotionDetail> {
   const apiUrl = process.env.TWEEDEKAMER_API_URL ?? defaultApiUrl;
   const query = new URLSearchParams({
-    $expand: "Besluit($expand=Stemming)",
+    $expand: "Besluit($expand=Stemming),Document",
   });
   const response = await fetch(
     `${apiUrl.replace(/\/$/, "")}/Zaak(${id})?${query}`,
@@ -96,7 +117,7 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
     throw new Error(`Tweede Kamer API returned ${response.status}`);
   }
 
-  const motion = (await response.json()) as ApiMotion & { Besluit?: ApiDecision[] };
+  const motion = (await response.json()) as ApiMotion;
   const votes = (motion.Besluit ?? [])
     .filter((decision) => decision.BesluitSoort?.startsWith("Stemmen"))
     .flatMap((decision) => decision.Stemming ?? [])
@@ -107,6 +128,11 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
       if (vote.Soort === "Tegen") return [{ party, stance: "Tegen" as const }];
       return [];
     });
+  const outcome = getOutcome(motion.Besluit);
+  const document = motion.Document?.find((item) => item.Soort === "Motie");
+  const text = document?.DocumentNummer
+    ? await getMotionText(document.DocumentNummer)
+    : "De tekst van deze motie is niet beschikbaar.";
 
   return {
     id: motion.Id,
@@ -115,8 +141,27 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
     startedAt: motion.GestartOp,
     status: motion.Status,
     meetingYear: motion.Vergaderjaar,
+    hasVote: votes.length > 0 || outcome !== "Nog niet gestemd",
+    outcome,
     votes,
+    text,
   };
+}
+
+async function getMotionText(documentNumber: string): Promise<string> {
+  const response = await fetch(
+    `https://www.tweedekamer.nl/downloads/document?id=${encodeURIComponent(documentNumber)}`,
+    { next: { revalidate: 3600 } },
+  );
+  if (!response.ok) return "De tekst van deze motie kon niet worden opgehaald.";
+
+  const { createRequire } = await import("node:module");
+  const require = createRequire(import.meta.url);
+  const { PDFParse } = require("pdf-parse") as typeof import("pdf-parse");
+  const parser = new PDFParse({ data: Buffer.from(await response.arrayBuffer()) });
+  const result = await parser.getText();
+  await parser.destroy();
+  return result.text.trim() || "De tekst van deze motie is niet beschikbaar.";
 }
 
 export function formatMotionDate(value: string | null): string {
