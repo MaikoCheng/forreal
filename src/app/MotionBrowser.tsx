@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { formatMotionDate, type Motion } from "@/lib/motions";
+import { formatMotionDate, type Motion, type MotionDetail } from "@/lib/motions";
 
 const themeKeywords: Record<string, string[]> = {
   Wonen: ["woon", "woning", "huur", "huisvesting"],
-  Zorg: ["zorg", "medisch", "ziekenhuis", "gezondheid", "patiënt", "verpleging", "medicatie", "dokter", "arts", "verpleegkundige" , "gezondheidszorg", "zorgverzekering", "zorgtoeslag", "zorgkosten", "zorginstelling", "zorgverlener", "zorgbehoefte", "zorgbeleid", "zorgsysteem", "zorgkwaliteit", "zorginnovatie", "zorgtechnologie"],
+  Zorg: ["zorg", "medisch", "ziekenhuis", "gezondheid", "patiënt", "verpleging", "medicatie", "dokter", "arts", "verpleegkundige" , "gezondheidszorg", "zorgverzekering", "zorgtoeslag", "zorgkosten", "zorginstelling", "zorgverlener", "zorgbehoefte", "zorgbeleid", "zorgsysteem", "zorgkwaliteit", "zorginnovatie", "zorgtechnologie", "eigen risico", "ggz", "thuiszorg", "ouderenzorg", "jeugdzorg", "gehandicaptenzorg", "preventieve zorg", "curatieve zorg", "palliatieve zorg", "mentale gezondheid", "psychische zorg", "gezondheidsbevordering", "gezondheidsbeleid"],
   Onderwijs: ["onderwijs", "school", "student", "leraar", "opleiding", "universiteit", "basisschool", "middelbare school", "voortgezet onderwijs", "hoger onderwijs", "onderwijsbeleid", "onderwijskwaliteit", "onderwijsinnovatie", "onderwijstechnologie", "school"],
-  Klimaat: ["klimaat", "stikstof", "energie", "duurzaam", "natuur"],
+  Klimaat: ["klimaat", "stikstof", "energie", "duurzaam", "natuur", "milieu", "broeikasgas", "klimaatverandering", "klimaatbeleid", "klimaatadaptatie", "klimaatmitigatie", "klimaatwet", "klimaatakkoord", "klimaatcrisis", "klimaatimpact", "klimaatfinanciering", "klimaatonderzoek", "klimaatbewustzijn"],
   Migratie: ["migratie", "asiel", "vluchteling", "inburgering"],
   Veiligheid: ["veiligheid", "politie", "justitie", "criminaliteit"],
   Economie: ["economie", "werk", "arbeid", "belasting", "ondernemer"],
   Defensie: ["defensie", "militair", "leger", "navo"],
   Cultuur: ["cultuur", "kunst", "theater", "muziek", "film"],
-
+  Abortus: ["abortus", "zwangerschap", "reproductieve rechten"],
+  IsraelPalestina: ["israel", "palestina", "gaza", "westelijke jordaanoever", "jeruzalem"],
 };
 
 const tabs = ["Alle moties", "Recente moties", "Per thema"];
@@ -37,6 +38,9 @@ export default function MotionBrowser() {
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [selectedMotion, setSelectedMotion] = useState<MotionDetail | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState(false);
 
   useEffect(() => {
     fetch("/api/motions")
@@ -95,6 +99,21 @@ export default function MotionBrowser() {
     setSelectedThemes((current) => current.includes(theme)
       ? current.filter((item) => item !== theme)
       : [...current, theme]);
+  }
+
+  async function openMotion(motion: Motion) {
+    setSelectedMotion(null);
+    setDetailError(false);
+    setIsDetailLoading(true);
+    try {
+      const response = await fetch(`/api/motions/${motion.id}`);
+      if (!response.ok) throw new Error("Detail request failed");
+      setSelectedMotion(await response.json() as MotionDetail);
+    } catch {
+      setDetailError(true);
+    } finally {
+      setIsDetailLoading(false);
+    }
   }
 
   return (
@@ -188,7 +207,12 @@ export default function MotionBrowser() {
       ) : (
         <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
           {paginatedMotions.map((motion) => (
-            <article key={motion.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              key={motion.id}
+              type="button"
+              onClick={() => openMotion(motion)}
+              className="flex w-full flex-col gap-3 p-5 text-left transition hover:bg-blue-50/40 sm:flex-row sm:items-center sm:justify-between"
+            >
               <div className="min-w-0">
                 <p className="mb-1 font-mono text-xs text-slate-400">Motie {motion.number}</p>
                 <h3 className="font-semibold text-slate-900">{motion.subject}</h3>
@@ -200,7 +224,7 @@ export default function MotionBrowser() {
                 ))}
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{motion.meetingYear ?? "Onbekend"}</span>
               </div>
-            </article>
+            </button>
           ))}
         </div>
       )}
@@ -252,6 +276,57 @@ export default function MotionBrowser() {
               </button>
             ))}
           </nav>
+        </div>
+      )}
+      {(isDetailLoading || detailError || selectedMotion) && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-label="Motiedetails">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <p className="font-mono text-xs text-slate-400">Motiedetails</p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                  {selectedMotion?.subject ?? "Motie wordt geladen"}
+                </h2>
+              </div>
+              <button type="button" onClick={() => { setSelectedMotion(null); setDetailError(false); }} className="rounded-lg px-3 py-2 text-2xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Sluiten">×</button>
+            </div>
+            {isDetailLoading ? (
+              <p className="mt-8 text-sm text-slate-500">Motie en stemmingen worden opgehaald...</p>
+            ) : detailError ? (
+              <p className="mt-8 rounded-xl bg-rose-50 p-4 text-sm text-rose-700">De details konden niet worden opgehaald.</p>
+            ) : selectedMotion && (
+              <>
+                <div className="mt-6 flex flex-wrap gap-2 text-xs text-slate-500">
+                  <span className="rounded-full bg-slate-100 px-3 py-1.5 font-mono">{selectedMotion.number}</span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1.5">{formatMotionDate(selectedMotion.startedAt)}</span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1.5">{selectedMotion.status ?? "Status onbekend"}</span>
+                </div>
+                <section className="mt-8">
+                  <h3 className="text-lg font-bold text-slate-950">Stemmingen per partij</h3>
+                  {selectedMotion.votes.length === 0 ? (
+                    <p className="mt-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Er is nog geen geregistreerde stemming voor deze motie.</p>
+                  ) : (
+                    <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                      {(["Voor", "Tegen"] as const).map((stance) => {
+                        const parties = selectedMotion.votes.filter((vote) => vote.stance === stance);
+                        return (
+                          <div key={stance} className="rounded-2xl border border-slate-200 p-4">
+                            <div className="flex items-center justify-between">
+                              <h4 className={`font-bold ${stance === "Voor" ? "text-emerald-700" : "text-rose-700"}`}>{stance}</h4>
+                              <span className="text-sm text-slate-400">{parties.length}</span>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {parties.map((vote) => <span key={vote.party} className="rounded-full bg-slate-100 px-3 py-1.5 text-sm text-slate-700">{vote.party}</span>)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
+          </div>
         </div>
       )}
     </section>

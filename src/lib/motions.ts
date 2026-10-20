@@ -7,6 +7,15 @@ export type Motion = {
   meetingYear: string | null;
 };
 
+export type MotionVote = {
+  party: string;
+  stance: "Voor" | "Tegen";
+};
+
+export type MotionDetail = Motion & {
+  votes: MotionVote[];
+};
+
 type ODataResponse<T> = {
   value: T[];
   "@odata.nextLink"?: string;
@@ -19,6 +28,17 @@ type ApiMotion = {
   GestartOp: string | null;
   Status: string | null;
   Vergaderjaar: string | null;
+};
+
+type ApiVote = {
+  Soort: string | null;
+  ActorFractie: string | null;
+  ActorNaam: string | null;
+};
+
+type ApiDecision = {
+  BesluitSoort: string | null;
+  Stemming?: ApiVote[];
 };
 
 const defaultApiUrl = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0";
@@ -60,6 +80,43 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
   }
 
   return motions;
+}
+
+export async function getMotionDetail(id: string): Promise<MotionDetail> {
+  const apiUrl = process.env.TWEEDEKAMER_API_URL ?? defaultApiUrl;
+  const query = new URLSearchParams({
+    $expand: "Besluit($expand=Stemming)",
+  });
+  const response = await fetch(
+    `${apiUrl.replace(/\/$/, "")}/Zaak(${id})?${query}`,
+    { next: { revalidate: 60 }, headers: { Accept: "application/json" } },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Tweede Kamer API returned ${response.status}`);
+  }
+
+  const motion = (await response.json()) as ApiMotion & { Besluit?: ApiDecision[] };
+  const votes = (motion.Besluit ?? [])
+    .filter((decision) => decision.BesluitSoort?.startsWith("Stemmen"))
+    .flatMap((decision) => decision.Stemming ?? [])
+    .flatMap((vote): MotionVote[] => {
+      const party = vote.ActorFractie ?? vote.ActorNaam;
+      if (!party || vote.Soort === null) return [];
+      if (vote.Soort === "Voor") return [{ party, stance: "Voor" as const }];
+      if (vote.Soort === "Tegen") return [{ party, stance: "Tegen" as const }];
+      return [];
+    });
+
+  return {
+    id: motion.Id,
+    number: motion.Nummer,
+    subject: motion.Onderwerp ?? "Onderwerp niet beschikbaar",
+    startedAt: motion.GestartOp,
+    status: motion.Status,
+    meetingYear: motion.Vergaderjaar,
+    votes,
+  };
 }
 
 export function formatMotionDate(value: string | null): string {
