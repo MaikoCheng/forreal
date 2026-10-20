@@ -17,7 +17,7 @@ Open daarna [http://localhost:3000](http://localhost:3000).
 
 De route `GET /api/motions` haalt de laatste moties server-side op. Daarmee blijft de upstream-configuratie buiten de browser en kan de route op Vercel gecachet worden. De basis-URL kan worden aangepast met `TWEEDEKAMER_API_URL`; zie [.env.example](./.env.example).
 
-> De exacte OData-entiteiten en velden kunnen per API-versie verschillen. Breid `src/app/api/motions/route.ts` uit met de benodigde `$select`, `$filter` en vervolgentiteiten voor geregistreerde hoofdelijke stemmingen.
+De loader gebruikt de live `Zaak`-entiteit met `$filter=Soort eq 'Motie'` en haalt de zes meest recente moties op. De route geeft genormaliseerde JSON terug aan eventuele andere clients.
 
 ## Deployen op Vercel
 

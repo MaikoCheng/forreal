@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatMotionDate, getMotions, type Motion } from "@/lib/motions";
 
 const parties = [
   { name: "PVV", color: "#164e63", stance: "Voor", votes: "18 / 18" },
@@ -9,31 +10,37 @@ const parties = [
   { name: "BBB", color: "#65a30d", stance: "Tegen", votes: "7 / 7" },
 ];
 
-const recentVotes = [
-  {
-    id: "36671-38",
-    title: "Motie over betaalbaarheid van wonen",
-    date: "Vandaag, 15:42",
-    result: "Aangenomen",
-    color: "emerald",
-  },
-  {
-    id: "36671-31",
-    title: "Motie over de langjarige aanpak stikstof",
-    date: "Vandaag, 15:17",
-    result: "Verworpen",
-    color: "rose",
-  },
-  {
-    id: "36671-22",
-    title: "Motie over publieke dienstverlening",
-    date: "Gisteren, 21:06",
-    result: "Aangehouden",
-    color: "amber",
-  },
-];
+function MotionList({ motions }: { motions: Motion[] }) {
+  if (motions.length === 0) {
+    return <p className="p-5 text-sm text-slate-500">Er zijn geen moties gevonden.</p>;
+  }
 
-export default function Home() {
+  return (
+    <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+      {motions.map((motion) => (
+        <article key={motion.id} className="flex items-center justify-between gap-4 p-5">
+          <div className="min-w-0">
+            <p className="mb-1 font-mono text-xs text-slate-400">Motie {motion.number}</p>
+            <h3 className="font-semibold text-slate-900">{motion.subject}</h3>
+            <p className="mt-2 text-xs text-slate-500">{formatMotionDate(motion.startedAt)} · {motion.status ?? "Status onbekend"}</p>
+          </div>
+          <span className="shrink-0 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">{motion.meetingYear ?? "Onbekend"}</span>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+export default async function Home() {
+  let motions: Motion[] = [];
+  let apiError = false;
+
+  try {
+    motions = await getMotions();
+  } catch {
+    apiError = true;
+  }
+
   return (
     <main className="mx-auto min-h-screen max-w-[1440px] px-5 py-6 sm:px-8 lg:px-12">
       <header className="flex items-center justify-between border-b border-slate-200 pb-5">
@@ -70,7 +77,7 @@ export default function Home() {
         <div className="relative overflow-hidden rounded-3xl bg-blue-600 p-8 text-white sm:p-10">
           <div className="absolute -right-10 -top-20 size-64 rounded-full border-[32px] border-blue-500/60" />
           <p className="relative text-sm font-medium text-blue-100">Laatste plenaire stemming</p>
-          <h2 className="relative mt-4 max-w-md text-3xl font-bold leading-tight">Motie over betaalbaarheid van wonen</h2>
+          <h2 className="relative mt-4 max-w-md text-3xl font-bold leading-tight">{motions[0]?.subject ?? "De laatste moties uit de Tweede Kamer"}</h2>
           <div className="relative mt-8 flex items-end justify-between gap-4">
             <div>
               <p className="text-5xl font-bold">78%</p>
@@ -103,18 +110,11 @@ export default function Home() {
             </div>
             <button className="hidden text-sm font-semibold text-blue-600 sm:block">Alles bekijken →</button>
           </div>
-          <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
-            {recentVotes.map((vote) => (
-              <article key={vote.id} className="flex items-center justify-between gap-4 p-5">
-                <div className="min-w-0">
-                  <p className="mb-1 font-mono text-xs text-slate-400">Motie {vote.id}</p>
-                  <h3 className="truncate font-semibold text-slate-900">{vote.title}</h3>
-                  <p className="mt-2 text-xs text-slate-500">{vote.date}</p>
-                </div>
-                <span className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${vote.color === "emerald" ? "bg-emerald-50 text-emerald-700" : vote.color === "rose" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700"}`}>{vote.result}</span>
-              </article>
-            ))}
-          </div>
+          {apiError ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
+              De moties konden niet worden opgehaald uit de Tweede Kamer API.
+            </div>
+          ) : <MotionList motions={motions} />}
         </div>
         <div id="partijen">
           <div className="mb-6">
