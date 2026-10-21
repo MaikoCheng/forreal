@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { formatMotionDate, type Motion, type MotionDetail } from "@/lib/motions";
 import PartySpectrum from "./PartySpectrum";
+import { getCachedMotions } from "@/lib/motion-client";
 
 const themeKeywords: Record<string, string[]> = {
   Wonen: [
@@ -991,8 +992,9 @@ const compiledThemeKeywords = Object.entries(themeKeywords).map(([theme, keyword
   keywords: keywords.map(normalizeKeywordText),
 }));
 const motionThemeCache = new WeakMap<Motion, string[]>();
+export const availableMotionThemes = Object.keys(themeKeywords);
 
-function themesForMotion(motion: Motion): string[] {
+export function themesForMotion(motion: Motion): string[] {
   const cachedThemes = motionThemeCache.get(motion);
   if (cachedThemes) return cachedThemes;
 
@@ -1115,12 +1117,8 @@ export default function MotionBrowser() {
       const today = formatDateInput(new Date());
       setEndDate(today);
     }, 0);
-    fetch("/api/motions")
-      .then(async (response) => {
-        if (!response.ok) throw new Error("API request failed");
-        return response.json() as Promise<{ motions: Motion[] }>;
-      })
-      .then((data) => setMotions(data.motions))
+    getCachedMotions()
+      .then((data) => setMotions(data))
       .catch(() => setApiError(true))
       .finally(() => setIsLoading(false));
     return () => window.clearTimeout(dateInitialization);
@@ -1358,7 +1356,7 @@ export default function MotionBrowser() {
                         : selectParty(partyKey(party.name))
                     }
                     aria-pressed={isSelected}
-                    className={`flex min-h-20 items-center cursor-pointer gap-3 rounded-2xl border p-4 text-left transition hover:border-blue-300 hover:shadow-sm ${isSelected ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 bg-white"}`}
+                    className={`flex min-h-20 min-w-0 items-center cursor-pointer gap-3 rounded-2xl border p-3 text-left transition hover:border-blue-300 hover:shadow-sm sm:p-4 ${isSelected ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 bg-white"}`}
                   >
                     {logo ? (
                       <Image
@@ -1388,10 +1386,10 @@ export default function MotionBrowser() {
             </div>
 
             {selectedPartyData && (
-              <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
+              <div className="mt-8 min-w-0 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
                 <div className="min-w-0">
-                  <div className="mb-4 flex items-center justify-between gap-4">
-                    <div>
+                  <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
                       <h3 className="text-xl font-bold text-slate-950">
                         {selectedPartyData.name}
                       </h3>
@@ -1399,7 +1397,7 @@ export default function MotionBrowser() {
                         Bekijk ingediende moties of het algemene stemgedrag van deze partij
                       </p>
                       {partyMotionView === "Ingediend" && (
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                        <div className="mt-3 flex max-w-full flex-wrap gap-2 text-xs font-semibold">
                         <button
                           type="button"
                           onClick={() => {
@@ -1984,7 +1982,7 @@ export default function MotionBrowser() {
           </div>
         )}
         {visibleMotions.length > 0 && (
-          <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <label className="flex items-center gap-2 text-sm text-slate-500">
               <span>Per pagina</span>
               <select
@@ -2002,7 +2000,7 @@ export default function MotionBrowser() {
                 ))}
               </select>
             </label>
-            <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
+            <div className="flex min-w-0 w-full items-center gap-2 sm:w-auto sm:gap-3">
               <button
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                 disabled={currentPage === 1}
@@ -2010,7 +2008,7 @@ export default function MotionBrowser() {
               >
                 ← Vorige
               </button>
-              <span               className="min-w-20 text-center text-sm text-slate-500">
+              <span className="min-w-0 flex-1 text-center text-sm text-slate-500 sm:min-w-20 sm:flex-none">
                 Pagina {currentPage} van {totalPages}
               </span>
               <button

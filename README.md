@@ -23,6 +23,8 @@ De nieuwe API maakt verdere uitbreidingen mogelijk zonder een andere gegevensbro
 
 De Kamerleden-module haalt profielinformatie op via `GET /api/members?ids=...` en combineert `Persoon` met `PersoonLoopbaan`, `PersoonOnderwijs`, `PersoonNevenfunctie` en `PersoonReis`. Profielen zijn beschikbaar via “Profiel bekijken” bij ieder Kamerlid; geregistreerde reizen worden daar getoond met doel, bestemming, periode en betaler. De v5-profielqueries worden 24 uur opgeslagen in de Next.js/Vercel Data Cache; de API-respons wordt op Vercel 24 uur aan de rand gecachet met maximaal zeven dagen stale-while-revalidate.
 
+De module “Regeringstoezeggingen” gebruikt de v5-entiteiten `Toezegging` en de relatie `ToegezegdAan`. De module toont toezeggingstekst, bewindspersoon, ministerie, status, activiteitnummer en de geregistreerde nakomingsdatum. De gegevens worden server-side via `GET /api/commitments` geladen en één uur gecachet.
+
 ## Manifesto-classificatie
 
 De PDF's in [`data/manifestos`](./data/manifestos) kunnen offline met een

@@ -999,7 +999,7 @@ export default function PartySpectrum({ motions }: { motions: Motion[] }) {
         ))}
       </div>
 
-      <div className="rounded-3xl border border-slate-200 bg-slate-950 p-4 text-white shadow-sm sm:p-7">
+      <div className="min-w-0 overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 p-4 text-white shadow-sm sm:overflow-visible sm:p-7">
         <div className="mb-7 max-w-2xl">
           <h3 className="text-xl font-bold">{axis.label}</h3>
           <p className="mt-2 text-sm leading-6 text-slate-300">{axis.description}</p>
@@ -1010,10 +1010,10 @@ export default function PartySpectrum({ motions }: { motions: Motion[] }) {
             Er zijn nog niet genoeg stemmingen om dit spectrum te berekenen.
           </div>
         ) : (
-          <div className="relative mx-auto aspect-[1.05] min-h-[20rem] max-w-5xl rounded-2xl border border-slate-800 bg-slate-900 sm:aspect-[1.45] sm:min-h-96">
+          <div className="relative mx-auto aspect-[1.05] min-h-[20rem] max-w-5xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 sm:aspect-[1.45] sm:min-h-96 sm:overflow-visible">
             <div className="absolute inset-x-0 top-1/2 border-t border-slate-700" />
             <div className="absolute inset-y-0 left-1/2 border-l border-slate-700" />
-            <div className="absolute inset-x-2 bottom-[-2rem] flex justify-between gap-4 text-[0.6rem] font-bold uppercase tracking-wider text-slate-500 sm:inset-x-0 sm:text-[0.65rem]">
+            <div className="absolute inset-x-2 bottom-2 flex justify-between gap-4 text-[0.6rem] font-bold uppercase tracking-wider text-slate-500 sm:inset-x-0 sm:bottom-[-2rem] sm:text-[0.65rem]">
               <span>{axis.x.low}</span>
               <span>{axis.x.high}</span>
             </div>

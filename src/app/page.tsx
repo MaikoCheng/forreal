@@ -1,6 +1,8 @@
 import Link from "next/link";
 import MemberBrowser from "./MemberBrowser";
 import MotionBrowser from "./MotionBrowser";
+import CommitmentsBrowser from "./CommitmentsBrowser";
+import PartySimilarity from "./PartySimilarity";
 
 export default async function Home() {
   return (
@@ -46,6 +48,18 @@ export default async function Home() {
             href="#leden"
           >
             Kamerleden
+          </a>
+          <a
+            className="transition hover:text-[var(--md-primary)]"
+            href="#toezeggingen"
+          >
+            Toezeggingen
+          </a>
+          <a
+            className="transition hover:text-[var(--md-primary)]"
+            href="#partijgelijkenis"
+          >
+            Partijgelijkenis
           </a>
           <a
             className="transition hover:text-[var(--md-primary)]"
@@ -128,6 +142,8 @@ export default async function Home() {
 
       <MotionBrowser />
       <MemberBrowser />
+      <CommitmentsBrowser />
+      <PartySimilarity />
 
       <footer className="flex flex-col gap-3 border-t border-[var(--md-outline-variant)] py-8 text-sm text-[var(--md-on-surface-variant)] sm:flex-row sm:items-center sm:justify-between">
         <p>ForReal · Onafhankelijk inzicht in parlementaire data</p>

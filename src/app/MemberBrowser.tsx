@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { MemberProfile, Motion } from "@/lib/motions";
+import { getPaginationItems, type MemberProfile, type Motion } from "@/lib/motions";
+import { getCachedMotions } from "@/lib/motion-client";
 
 type MemberStats = {
   personId: string;
@@ -68,7 +69,7 @@ function MemberProfileDetails({
       <div className="mt-3 space-y-3 text-xs text-slate-600">
         {identity && <p>{identity}</p>}
         {profile.education.length > 0 && (
-          <div>
+          <div className="min-w-0">
             <p className="font-bold text-slate-700">Opleiding</p>
             {profile.education.map((item, index) => (
               <p key={`${item.title}-${index}`}>
@@ -79,7 +80,7 @@ function MemberProfileDetails({
           </div>
         )}
         {profile.careers.length > 0 && (
-          <div>
+          <div className="min-w-0">
             <p className="font-bold text-slate-700">Loopbaan</p>
             {profile.careers.map((item, index) => (
               <p key={`${item.title}-${index}`}>
@@ -90,7 +91,7 @@ function MemberProfileDetails({
           </div>
         )}
         {profile.secondaryFunctions.length > 0 && (
-          <div>
+          <div className="min-w-0">
             <p className="font-bold text-slate-700">Nevenfuncties</p>
             {profile.secondaryFunctions.map((item, index) => (
               <p key={`${item.description}-${index}`}>
@@ -101,7 +102,7 @@ function MemberProfileDetails({
           </div>
         )}
         {travels.length > 0 && (
-          <div>
+          <div className="min-w-0">
             <p className="font-bold text-slate-700">Reizen</p>
             {travels.map((item, index) => (
               <p key={`${item.destination}-${index}`}>
@@ -128,15 +129,11 @@ export default function MemberBrowser() {
   const [sortKey, setSortKey] = useState<SortKey>("submitted");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [page, setPage] = useState(1);
-  const pageSize = 20;
+  const pageSize = 10;
 
   useEffect(() => {
-    fetch("/api/motions")
-      .then(async (response) => {
-        if (!response.ok) throw new Error("API request failed");
-        return response.json() as Promise<{ motions: Motion[] }>;
-      })
-      .then((data) => setMotions(data.motions))
+    getCachedMotions()
+      .then((data) => setMotions(data))
       .catch(() => setHasError(true))
       .finally(() => setIsLoading(false));
   }, []);
@@ -217,11 +214,11 @@ export default function MemberBrowser() {
 
   const totalPages = Math.max(1, Math.ceil(visibleMembers.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const paginatedMembers = visibleMembers.slice(
+  const displayedMembers = visibleMembers.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
   );
-  const visibleProfileKey = [...paginatedMembers]
+  const visibleProfileKey = [...displayedMembers]
     .map((member) => member.personId)
     .sort()
     .join(",");
@@ -241,7 +238,7 @@ export default function MemberBrowser() {
   }, [visibleProfileKey]);
 
   return (
-    <section id="leden" className="py-10 sm:py-14">
+    <section id="leden" className="md3-browser py-10 sm:py-14">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--md-primary)]">
@@ -344,36 +341,36 @@ export default function MemberBrowser() {
       {!isLoading && !hasError && members.length > 0 && (
         <>
           <div className="space-y-3 md:hidden">
-            {paginatedMembers.map((member, index) => (
+            {displayedMembers.map((member, index) => (
               <article
                 key={member.personId}
-                className="rounded-2xl border border-[var(--md-outline-variant)] bg-white p-4"
+                className="rounded-xl border border-[var(--md-outline-variant)] bg-white p-3"
               >
                 <div className="flex items-start gap-3">
                   <span className="pt-0.5 text-xs font-bold text-slate-400">
-                    {(currentPage - 1) * pageSize + index + 1}
+                    {index + 1}
                   </span>
                   <div className="min-w-0">
                     <h3 className="truncate font-bold text-slate-900">{member.name}</h3>
                     <p className="mt-0.5 text-xs text-slate-500">{member.party}</p>
                   </div>
                 </div>
-                <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
-                  <div>
-                    <dt className="text-xs text-slate-500">Moties</dt>
-                    <dd className="mt-0.5 text-lg font-bold text-slate-900">{member.submitted}</dd>
+                <dl className="mt-3 grid grid-cols-[repeat(4,minmax(0,1fr))] gap-2 border-t border-slate-100 pt-3">
+                  <div className="min-w-0">
+                    <dt className="text-[10px] leading-4 text-slate-500">Moties</dt>
+                    <dd className="mt-0.5 text-base font-bold text-slate-900">{member.submitted}</dd>
                   </div>
-                  <div>
-                    <dt className="text-xs text-emerald-700">Voor</dt>
-                    <dd className="mt-0.5 text-lg font-bold text-emerald-700">{member.forVotes}</dd>
+                  <div className="min-w-0">
+                    <dt className="text-[10px] leading-4 text-emerald-700">Voor</dt>
+                    <dd className="mt-0.5 text-base font-bold text-emerald-700">{member.forVotes}</dd>
                   </div>
-                  <div>
-                    <dt className="text-xs text-rose-700">Tegen</dt>
-                    <dd className="mt-0.5 text-lg font-bold text-rose-700">{member.against}</dd>
+                  <div className="min-w-0">
+                    <dt className="text-[10px] leading-4 text-rose-700">Tegen</dt>
+                    <dd className="mt-0.5 text-base font-bold text-rose-700">{member.against}</dd>
                   </div>
-                  <div>
-                    <dt className="text-xs text-slate-600">Niet deelgenomen</dt>
-                    <dd className="mt-0.5 text-lg font-bold text-slate-600">{member.notParticipated}</dd>
+                  <div className="min-w-0">
+                    <dt className="break-all text-[10px] leading-4 text-slate-600">Niet deelgenomen</dt>
+                    <dd className="mt-0.5 text-base font-bold text-slate-600">{member.notParticipated}</dd>
                   </div>
                 </dl>
                 <MemberProfileDetails profile={member.profile} isLoading={profilesLoading} />
@@ -412,12 +409,12 @@ export default function MemberBrowser() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedMembers.map((member, index) => (
+              {displayedMembers.map((member, index) => (
                 <tr key={member.personId} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <span className="w-6 text-xs font-bold text-slate-400">
-                        {(currentPage - 1) * pageSize + index + 1}
+                        {index + 1}
                       </span>
                       <span>
                         <span className="block font-bold text-slate-900">
@@ -451,7 +448,7 @@ export default function MemberBrowser() {
             <span className="text-sm text-slate-500">
               {visibleMembers.length} {visibleMembers.length === 1 ? "Kamerlid" : "Kamerleden"}
             </span>
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
@@ -460,9 +457,25 @@ export default function MemberBrowser() {
               >
                 ← Vorige
               </button>
-              <span className="min-w-24 text-center text-sm text-slate-500">
-                Pagina {currentPage} van {totalPages}
-              </span>
+              {getPaginationItems(totalPages, currentPage).map((pageItem, index) =>
+                pageItem === "ellipsis" ? (
+                  <span key={`ellipsis-${index}`} className="px-1 text-sm text-slate-500">…</span>
+                ) : (
+                  <button
+                    key={pageItem}
+                    type="button"
+                    onClick={() => setPage(pageItem)}
+                    aria-current={currentPage === pageItem ? "page" : undefined}
+                    className={`grid size-9 cursor-pointer place-items-center rounded-lg text-sm font-semibold transition ${
+                      currentPage === pageItem
+                        ? "bg-blue-600 text-white"
+                        : "border border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-blue-600"
+                    }`}
+                  >
+                    {pageItem}
+                  </button>
+                ),
+              )}
               <button
                 type="button"
                 onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
@@ -472,23 +485,6 @@ export default function MemberBrowser() {
                 Volgende →
               </button>
             </div>
-            <nav className="hidden flex-wrap justify-center gap-1 md:flex" aria-label="Paginanavigatie Kamerleden">
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-                <button
-                  key={pageNumber}
-                  type="button"
-                  onClick={() => setPage(pageNumber)}
-                  aria-current={currentPage === pageNumber ? "page" : undefined}
-                  className={`grid size-9 cursor-pointer place-items-center rounded-lg text-sm font-semibold transition ${
-                    currentPage === pageNumber
-                      ? "bg-blue-600 text-white"
-                      : "border border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-blue-600"
-                  }`}
-                >
-                  {pageNumber}
-                </button>
-              ))}
-            </nav>
           </div>
         </>
       )}

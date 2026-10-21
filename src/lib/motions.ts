@@ -44,6 +44,36 @@ export type MotionDetail = Motion & {
   text: string;
 };
 
+export type GovernmentCommitment = {
+  id: string;
+  number: string | null;
+  activityNumber: string | null;
+  createdAt: string | null;
+  minister: string | null;
+  ministerRole: string | null;
+  ministry: string | null;
+  status: string | null;
+  dueDate: string | null;
+  text: string | null;
+  addressedTo: Array<{ personId: string; partyId: string; personName: string | null; partyName: string | null }>;
+};
+
+export type PaginationItem = number | "ellipsis";
+
+export function getPaginationItems(totalPages: number, currentPage: number): PaginationItem[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+  const pages = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+  const sortedPages = [...pages].filter((page) => page >= 1 && page <= totalPages).sort((a, b) => a - b);
+  return sortedPages.flatMap((page, index) => {
+    const previousPage = sortedPages[index - 1];
+    return index > 0 && page - previousPage > 1
+      ? ["ellipsis" as const, page]
+      : [page];
+  });
+}
+
 type ODataResponse<T> = {
   value: T[];
   "@odata.nextLink"?: string;
@@ -92,6 +122,29 @@ type ApiTravel = {
   Van: string | null;
   TotEnMet: string | null;
   BetaaldDoor: string | null;
+};
+
+type ApiCommitmentRecipient = {
+  Toezegging_Id: string;
+  Persoon_Id: string;
+  Fractie_Id: string;
+  Persoon?: { Voornamen: string | null; Achternaam: string | null };
+  Fractie?: { Afkorting: string | null; NaamNL: string | null };
+};
+
+type ApiCommitment = {
+  Id: string;
+  Nummer: string | null;
+  ActiviteitNummer: string | null;
+  Aanmaakdatum: string | null;
+  Voornaam: string | null;
+  Achternaam: string | null;
+  Functie: string | null;
+  Ministerie: string | null;
+  Status: string | null;
+  DatumNakoming: string | null;
+  Tekst: string | null;
+  ToegezegdAan?: ApiCommitmentRecipient[];
 };
 
 type ApiMotion = {
@@ -326,6 +379,56 @@ export async function getMemberProfiles(personIds: string[]): Promise<MemberProf
         to: item.TotEnMet,
         paidBy: item.BetaaldDoor,
       })),
+  }));
+}
+
+export async function getGovernmentCommitments(): Promise<GovernmentCommitment[]> {
+  const apiUrl = process.env.TWEEDEKAMER_API_URL ?? defaultApiUrl;
+  const baseUrl = apiUrl.replace(/\/$/, "");
+  const commitments: ApiCommitment[] = [];
+  const pageSize = 250;
+  let skip = 0;
+
+  while (true) {
+    const query = new URLSearchParams({
+      $filter: "Verwijderd eq false",
+      $orderby: "Aanmaakdatum desc",
+      $top: String(pageSize),
+      $skip: String(skip),
+      $select: "Id,Nummer,ActiviteitNummer,Aanmaakdatum,Voornaam,Achternaam,Functie,Ministerie,Status,DatumNakoming,Tekst",
+      $expand: "ToegezegdAan($select=Toezegging_Id,Persoon_Id,Fractie_Id;$expand=Persoon($select=Voornamen,Achternaam),Fractie($select=Afkorting,NaamNL))",
+    });
+    const response = await fetch(`${baseUrl}/Toezegging?${query}`, {
+      next: { revalidate: 3600 },
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(45_000),
+    });
+    if (!response.ok) {
+      throw new Error(`Tweede Kamer API returned ${response.status}`);
+    }
+    const data = await response.json() as ODataResponse<ApiCommitment>;
+    commitments.push(...data.value);
+    if (data.value.length < pageSize) break;
+    skip += pageSize;
+  }
+
+  return commitments.map((commitment) => ({
+    id: commitment.Id,
+    number: commitment.Nummer,
+    activityNumber: commitment.ActiviteitNummer,
+    createdAt: commitment.Aanmaakdatum,
+    minister: [commitment.Voornaam, commitment.Achternaam].filter(Boolean).join(" ") || null,
+    ministerRole: commitment.Functie,
+    ministry: commitment.Ministerie,
+    status: commitment.Status,
+    dueDate: commitment.DatumNakoming?.startsWith("0001-") ? null : commitment.DatumNakoming,
+    text: commitment.Tekst,
+    addressedTo: (commitment.ToegezegdAan ?? []).map((recipient) => ({
+      personId: recipient.Persoon_Id,
+      partyId: recipient.Fractie_Id,
+      personName: [recipient.Persoon?.Voornamen, recipient.Persoon?.Achternaam].filter(Boolean).join(" ") || null,
+      partyName: recipient.Fractie?.Afkorting ?? recipient.Fractie?.NaamNL ?? null,
+    })),
   }));
 }
 
