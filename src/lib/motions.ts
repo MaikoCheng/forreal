@@ -61,6 +61,7 @@ type ApiZaakActor = {
 };
 
 const defaultApiUrl = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0";
+const unavailableMotionText = "De tekst van deze motie is niet beschikbaar.";
 
 function getOutcome(decisions: ApiDecision[] | undefined): Motion["outcome"] {
   const vote = decisions?.find((decision) => decision.BesluitSoort?.startsWith("Stemmen"));
@@ -189,33 +190,39 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
 }
 
 async function getMotionText(documentNumber: string): Promise<string> {
-  let response: Response;
   try {
-    response = await fetch(
+    const response = await fetch(
       `https://www.tweedekamer.nl/downloads/document?id=${encodeURIComponent(documentNumber)}`,
       { next: { revalidate: 3600 }, signal: AbortSignal.timeout(15_000) },
     );
+    if (!response.ok) {
+      console.warn(`Motie-PDF ${documentNumber} kon niet worden opgehaald: ${response.status}`);
+      return unavailableMotionText;
+    }
+
+    const { createRequire } = await import("node:module");
+    const require = createRequire(import.meta.url);
+    const { PDFParse } = require("pdf-parse") as typeof import("pdf-parse");
+    const parser = new PDFParse({ data: Buffer.from(await response.arrayBuffer()) });
+    try {
+      const result = await parser.getText();
+      const text = result.text.replace(/\r\n/g, "\n").trim();
+      const motionStart = text.search(/\bDe\s+kamer\b/i);
+      const motionText = (motionStart >= 0 ? text.slice(motionStart) : text)
+        .replace(/\s*KST-[\s\S]*$/i, "")
+        .replace(/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gmi, "")
+        .trim();
+      return motionText || unavailableMotionText;
+    } finally {
+      await parser.destroy();
+    }
   } catch (error) {
+    console.warn(`Motie-PDF ${documentNumber} kon niet worden verwerkt.`, error);
     if (error instanceof DOMException && error.name === "TimeoutError") {
       return "De tekst van deze motie kon niet op tijd worden opgehaald.";
     }
-    throw error;
+    return unavailableMotionText;
   }
-  if (!response.ok) return "De tekst van deze motie kon niet worden opgehaald.";
-
-  const { createRequire } = await import("node:module");
-  const require = createRequire(import.meta.url);
-  const { PDFParse } = require("pdf-parse") as typeof import("pdf-parse");
-  const parser = new PDFParse({ data: Buffer.from(await response.arrayBuffer()) });
-  const result = await parser.getText();
-  await parser.destroy();
-  const text = result.text.replace(/\r\n/g, "\n").trim();
-  const motionStart = text.search(/\bDe\s+kamer\b/i);
-  const motionText = (motionStart >= 0 ? text.slice(motionStart) : text)
-    .replace(/\s*KST-[\s\S]*$/i, "")
-    .replace(/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gmi, "")
-    .trim();
-  return motionText || "De tekst van deze motie is niet beschikbaar.";
 }
 
 export function formatMotionDate(value: string | null): string {

@@ -1,6 +1,8 @@
 import { connection, NextResponse } from "next/server";
 import { getMotionDetail } from "@/lib/motions";
 
+export const maxDuration = 30;
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -13,7 +15,8 @@ export async function GET(
 
   try {
     return NextResponse.json(await getMotionDetail(id));
-  } catch {
+  } catch (error) {
+    console.error(`Motiedetails voor ${id} konden niet worden opgehaald.`, error);
     return NextResponse.json(
       { error: "De details van deze motie konden niet worden opgehaald." },
       { status: 502 },
