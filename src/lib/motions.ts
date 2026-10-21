@@ -35,6 +35,7 @@ export type MemberProfile = {
   education: Array<{ title: string | null; institution: string | null; place: string | null; from: string | null; to: string | null }>;
   careers: Array<{ title: string | null; employer: string | null; place: string | null; from: string | null; to: string | null }>;
   secondaryFunctions: Array<{ description: string | null; from: string | null; to: string | null; type: string | null; explanation: string | null }>;
+  travels: Array<{ purpose: string | null; destination: string | null; from: string | null; to: string | null; paidBy: string | null }>;
 };
 
 export type MotionDetail = Motion & {
@@ -82,6 +83,15 @@ type ApiSecondaryFunction = {
   TotEnMet: string | null;
   Soort: string | null;
   Toelichting: string | null;
+};
+
+type ApiTravel = {
+  Persoon_Id: string;
+  Doel: string | null;
+  Bestemming: string | null;
+  Van: string | null;
+  TotEnMet: string | null;
+  BetaaldDoor: string | null;
 };
 
 type ApiMotion = {
@@ -224,7 +234,7 @@ export async function getMemberProfiles(personIds: string[]): Promise<MemberProf
   const chunks = Array.from({ length: Math.ceil(uniqueIds.length / 10) }, (_, index) =>
     uniqueIds.slice(index * 10, (index + 1) * 10),
   );
-  const results: Array<[ApiPerson[], ApiCareer[], ApiEducation[], ApiSecondaryFunction[]]> = [];
+  const results: Array<[ApiPerson[], ApiCareer[], ApiEducation[], ApiSecondaryFunction[], ApiTravel[]]> = [];
   for (let index = 0; index < chunks.length; index += 2) {
     const batchResults = await Promise.all(chunks.slice(index, index + 2).map(async (ids) => {
       const filter = ids.map((id) => `Persoon_Id eq ${id}`).join(" or ");
@@ -249,11 +259,15 @@ export async function getMemberProfiles(personIds: string[]): Promise<MemberProf
           $select: "Persoon_Id,Omschrijving,Van,TotEnMet,Soort,Toelichting",
           $orderby: "Persoon_Id,Volgorde",
         })),
+        request<ApiTravel>("PersoonReis", new URLSearchParams({
+          $filter: `${filter} and Verwijderd eq false`,
+          $select: "Persoon_Id,Doel,Bestemming,Van,TotEnMet,BetaaldDoor",
+        })),
       ]);
       return responses.map((response, responseIndex) => {
         if (response.status === "fulfilled") return response.value;
         console.warn("Tweede Kamer-profieldeel kon niet worden opgehaald.", {
-          entity: ["Persoon", "PersoonLoopbaan", "PersoonOnderwijs", "PersoonNevenfunctie"][responseIndex],
+          entity: ["Persoon", "PersoonLoopbaan", "PersoonOnderwijs", "PersoonNevenfunctie", "PersoonReis"][responseIndex],
           ids,
           error: response.reason,
         });
@@ -263,6 +277,7 @@ export async function getMemberProfiles(personIds: string[]): Promise<MemberProf
         ApiCareer[],
         ApiEducation[],
         ApiSecondaryFunction[],
+        ApiTravel[],
       ];
     }));
     results.push(...batchResults);
@@ -271,6 +286,7 @@ export async function getMemberProfiles(personIds: string[]): Promise<MemberProf
   const careers = results.flatMap(([, items]) => items);
   const education = results.flatMap(([, , items]) => items);
   const secondaryFunctions = results.flatMap(([, , , items]) => items);
+  const travels = results.flatMap(([, , , , items]) => items);
 
   return people.map((person) => ({
     id: person.Id,
@@ -300,6 +316,16 @@ export async function getMemberProfiles(personIds: string[]): Promise<MemberProf
       type: item.Soort,
       explanation: item.Toelichting,
     })),
+    travels: travels
+      .filter((item) => item.Persoon_Id === person.Id)
+      .sort((first, second) => (second.Van ?? "").localeCompare(first.Van ?? ""))
+      .map((item) => ({
+        purpose: item.Doel,
+        destination: item.Bestemming,
+        from: item.Van,
+        to: item.TotEnMet,
+        paidBy: item.BetaaldDoor,
+      })),
   }));
 }
 

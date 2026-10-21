@@ -50,6 +50,7 @@ function MemberProfileDetails({
   const identity = profile && [profile.role, profile.birthPlace, profile.birthDate]
     .filter(Boolean)
     .join(" · ");
+  const travels = profile?.travels ?? [];
   return (
     <details className="mt-3 border-t border-slate-100 pt-3 text-left">
       <summary className="cursor-pointer text-xs font-semibold text-blue-700">
@@ -95,6 +96,18 @@ function MemberProfileDetails({
               <p key={`${item.description}-${index}`}>
                 {[item.description, item.type, item.explanation].filter(Boolean).join(" · ")}
                 {formatPeriod(item.from, item.to) && ` (${formatPeriod(item.from, item.to)})`}
+              </p>
+            ))}
+          </div>
+        )}
+        {travels.length > 0 && (
+          <div>
+            <p className="font-bold text-slate-700">Reizen</p>
+            {travels.map((item, index) => (
+              <p key={`${item.destination}-${index}`}>
+                {[item.purpose, item.destination].filter(Boolean).join(" · ")}
+                {formatPeriod(item.from, item.to) && ` (${formatPeriod(item.from, item.to)})`}
+                {item.paidBy && ` · Betaald door: ${item.paidBy}`}
               </p>
             ))}
           </div>
@@ -217,7 +230,7 @@ export default function MemberBrowser() {
   useEffect(() => {
     if (!visibleProfileKey) return;
     const personIds = visibleProfileKey.split(",");
-    fetch(`/api/members?ids=${encodeURIComponent(personIds.join(","))}`)
+    fetch(`/api/members?v=2&ids=${encodeURIComponent(personIds.join(","))}`)
       .then(async (response) => {
         if (!response.ok) throw new Error("Member profile request failed");
         return response.json() as Promise<{ members: MemberProfile[] }>;

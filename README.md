@@ -21,7 +21,7 @@ De loader gebruikt de v5 `Zaak`-entiteit met `$filter=Soort eq 'Motie'` en haalt
 
 De nieuwe API maakt verdere uitbreidingen mogelijk zonder een andere gegevensbron, bijvoorbeeld ledenprofielen via `Persoon`, fracties en zetelverdelingen via `Fractie`/`FractieZetel`, commissie- en vergaderinformatie via `Commissie`/`Vergadering`, en toezeggingen via `Toezegging`/`ToegezegdAan`. Gebruik `$metadata` en de entity-setlijst op de [v5 API](https://gegevensmagazijn.tweedekamer.nl/OData/v5) als actuele bron voor velden en relaties.
 
-De Kamerleden-module haalt profielinformatie op via `GET /api/members?ids=...` en combineert `Persoon` met `PersoonLoopbaan`, `PersoonOnderwijs` en `PersoonNevenfunctie`. Profielen zijn beschikbaar via “Profiel bekijken” bij ieder Kamerlid. De v5-profielqueries worden 24 uur opgeslagen in de Next.js/Vercel Data Cache; de API-respons wordt op Vercel 24 uur aan de rand gecachet met maximaal zeven dagen stale-while-revalidate.
+De Kamerleden-module haalt profielinformatie op via `GET /api/members?ids=...` en combineert `Persoon` met `PersoonLoopbaan`, `PersoonOnderwijs`, `PersoonNevenfunctie` en `PersoonReis`. Profielen zijn beschikbaar via “Profiel bekijken” bij ieder Kamerlid; geregistreerde reizen worden daar getoond met doel, bestemming, periode en betaler. De v5-profielqueries worden 24 uur opgeslagen in de Next.js/Vercel Data Cache; de API-respons wordt op Vercel 24 uur aan de rand gecachet met maximaal zeven dagen stale-while-revalidate.
 
 ## Manifesto-classificatie
 
