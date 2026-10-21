@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { formatMotionDate, type Motion, type MotionDetail } from "@/lib/motions";
-import PartySpectrum from "./PartySpectrum";
 import { getCachedMotions } from "@/lib/motion-client";
 
 const themeKeywords: Record<string, string[]> = {
@@ -1086,7 +1085,13 @@ function formatIsoDateInput(value: string): string {
   return `${day}-${month}-${year}`;
 }
 
-export default function MotionBrowser() {
+export default function MotionBrowser({
+  showPartyModule = true,
+  showMotionModule = true,
+}: {
+  showPartyModule?: boolean;
+  showMotionModule?: boolean;
+}) {
   const [motions, setMotions] = useState<Motion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
@@ -1311,7 +1316,7 @@ export default function MotionBrowser() {
 
   return (
     <>
-      <section
+      {showPartyModule && <section
         id="partijen"
         className="md3-browser border-y border-[var(--md-outline-variant)] py-10 sm:py-14"
       >
@@ -1752,11 +1757,9 @@ export default function MotionBrowser() {
             )}
           </>
         )}
-      </section>
+      </section>}
 
-      <PartySpectrum motions={motions} />
-
-      <section id="moties" className="md3-browser py-10 sm:py-14">
+      {showMotionModule && <section id="moties" className="md3-browser py-10 sm:py-14">
         <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-blue-600">
@@ -2237,7 +2240,7 @@ export default function MotionBrowser() {
             </div>
           </div>
         )}
-      </section>
+      </section>}
     </>
   );
 }

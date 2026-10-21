@@ -13,6 +13,17 @@ npm run dev
 
 Open daarna [http://localhost:3000](http://localhost:3000).
 
+De homepage is een overzicht met links naar de afzonderlijke functies:
+
+- `/moties` — moties, zoekfilters, uitkomsten en stemmingen
+- `/partijen` — partijkaarten, ingediende moties en stemgedrag
+- `/partijen/analyse` — de filterbare partijgelijkenismatrix
+- `/partijen/spectrum` — het politieke spectrum
+- `/kamerleden` — Kamerleden, stemcijfers en profielen
+- `/toezeggingen` — regeringstoezeggingen met status- en ministeriefilters
+
+De afzonderlijke routes laden alleen hun eigen zware module. Daardoor blijft de homepage licht en zijn functies direct deelbaar via hun URL.
+
 ## API-proxy
 
 De route `GET /api/motions` haalt de laatste moties server-side op. Daarmee blijft de upstream-configuratie buiten de browser en kan de route op Vercel gecachet worden. De basis-URL kan worden aangepast met `TWEEDEKAMER_API_URL`; zie [.env.example](./.env.example).
