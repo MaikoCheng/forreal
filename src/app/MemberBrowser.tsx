@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Motion } from "@/lib/motions";
+import type { MemberProfile, Motion } from "@/lib/motions";
 
 type MemberStats = {
   personId: string;
@@ -11,6 +11,7 @@ type MemberStats = {
   forVotes: number;
   against: number;
   notParticipated: number;
+  profile?: MemberProfile;
 };
 
 type SortKey = "name" | "submitted" | "forVotes" | "against" | "notParticipated";
@@ -34,10 +35,82 @@ const sortOptions: { key: SortKey; label: string }[] = [
   { key: "notParticipated", label: "Niet deelgenomen" },
 ];
 
+function formatPeriod(from: string | null, to: string | null): string {
+  if (!from && !to) return "";
+  return `${from ?? "?"} - ${to ?? "heden"}`;
+}
+
+function MemberProfileDetails({
+  profile,
+  isLoading,
+}: {
+  profile?: MemberProfile;
+  isLoading: boolean;
+}) {
+  const identity = profile && [profile.role, profile.birthPlace, profile.birthDate]
+    .filter(Boolean)
+    .join(" · ");
+  return (
+    <details className="mt-3 border-t border-slate-100 pt-3 text-left">
+      <summary className="cursor-pointer text-xs font-semibold text-blue-700">
+        Profiel bekijken
+      </summary>
+      {isLoading && (
+        <p className="mt-3 text-xs text-slate-500">Profiel wordt opgehaald...</p>
+      )}
+      {!isLoading && !profile && (
+        <p className="mt-3 text-xs text-slate-500">
+          Geen aanvullende profielgegevens beschikbaar.
+        </p>
+      )}
+      {!isLoading && profile && (
+      <div className="mt-3 space-y-3 text-xs text-slate-600">
+        {identity && <p>{identity}</p>}
+        {profile.education.length > 0 && (
+          <div>
+            <p className="font-bold text-slate-700">Opleiding</p>
+            {profile.education.map((item, index) => (
+              <p key={`${item.title}-${index}`}>
+                {[item.title, item.institution, item.place].filter(Boolean).join(", ")}
+                {formatPeriod(item.from, item.to) && ` (${formatPeriod(item.from, item.to)})`}
+              </p>
+            ))}
+          </div>
+        )}
+        {profile.careers.length > 0 && (
+          <div>
+            <p className="font-bold text-slate-700">Loopbaan</p>
+            {profile.careers.map((item, index) => (
+              <p key={`${item.title}-${index}`}>
+                {[item.title, item.employer, item.place].filter(Boolean).join(", ")}
+                {formatPeriod(item.from, item.to) && ` (${formatPeriod(item.from, item.to)})`}
+              </p>
+            ))}
+          </div>
+        )}
+        {profile.secondaryFunctions.length > 0 && (
+          <div>
+            <p className="font-bold text-slate-700">Nevenfuncties</p>
+            {profile.secondaryFunctions.map((item, index) => (
+              <p key={`${item.description}-${index}`}>
+                {[item.description, item.type, item.explanation].filter(Boolean).join(" · ")}
+                {formatPeriod(item.from, item.to) && ` (${formatPeriod(item.from, item.to)})`}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
+      )}
+    </details>
+  );
+}
+
 export default function MemberBrowser() {
   const [motions, setMotions] = useState<Motion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [profiles, setProfiles] = useState<MemberProfile[]>([]);
+  const [loadedProfileKey, setLoadedProfileKey] = useState("");
   const [partyFilter, setPartyFilter] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("submitted");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -81,8 +154,11 @@ export default function MemberBrowser() {
         });
     });
 
-    return [...stats.values()];
-  }, [motions]);
+    return [...stats.values()].map((member) => ({
+      ...member,
+      profile: profiles.find((profile) => profile.id === member.personId),
+    }));
+  }, [motions, profiles]);
 
   const parties = useMemo(() =>
     [...new Set(members.map((member) => member.party))]
@@ -132,6 +208,24 @@ export default function MemberBrowser() {
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
   );
+  const visibleProfileKey = [...paginatedMembers]
+    .map((member) => member.personId)
+    .sort()
+    .join(",");
+  const profilesLoading = visibleProfileKey !== loadedProfileKey;
+
+  useEffect(() => {
+    if (!visibleProfileKey) return;
+    const personIds = visibleProfileKey.split(",");
+    fetch(`/api/members?ids=${encodeURIComponent(personIds.join(","))}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Member profile request failed");
+        return response.json() as Promise<{ members: MemberProfile[] }>;
+      })
+      .then((data) => setProfiles(data.members))
+      .catch(() => setProfiles([]))
+      .finally(() => setLoadedProfileKey(visibleProfileKey));
+  }, [visibleProfileKey]);
 
   return (
     <section id="leden" className="py-10 sm:py-14">
@@ -269,6 +363,7 @@ export default function MemberBrowser() {
                     <dd className="mt-0.5 text-lg font-bold text-slate-600">{member.notParticipated}</dd>
                   </div>
                 </dl>
+                <MemberProfileDetails profile={member.profile} isLoading={profilesLoading} />
               </article>
             ))}
           </div>
@@ -318,6 +413,7 @@ export default function MemberBrowser() {
                         <span className="block text-xs text-slate-500">
                           {member.party}
                         </span>
+                        <MemberProfileDetails profile={member.profile} isLoading={profilesLoading} />
                       </span>
                     </div>
                   </td>

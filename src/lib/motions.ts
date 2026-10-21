@@ -25,6 +25,18 @@ export type MotionVote = {
   stance: "Voor" | "Tegen" | "Niet deelgenomen";
 };
 
+export type MemberProfile = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: string | null;
+  birthDate: string | null;
+  birthPlace: string | null;
+  education: Array<{ title: string | null; institution: string | null; place: string | null; from: string | null; to: string | null }>;
+  careers: Array<{ title: string | null; employer: string | null; place: string | null; from: string | null; to: string | null }>;
+  secondaryFunctions: Array<{ description: string | null; from: string | null; to: string | null; type: string | null; explanation: string | null }>;
+};
+
 export type MotionDetail = Motion & {
   submittingParties: string[];
   votes: MotionVote[];
@@ -34,6 +46,42 @@ export type MotionDetail = Motion & {
 type ODataResponse<T> = {
   value: T[];
   "@odata.nextLink"?: string;
+};
+
+type ApiPerson = {
+  Id: string;
+  Voornamen: string | null;
+  Achternaam: string | null;
+  Functie: string | null;
+  Geboortedatum: string | null;
+  Geboorteplaats: string | null;
+};
+
+type ApiCareer = {
+  Persoon_Id: string;
+  Functie: string | null;
+  Werkgever: string | null;
+  Plaats: string | null;
+  Van: string | null;
+  TotEnMet: string | null;
+};
+
+type ApiEducation = {
+  Persoon_Id: string;
+  OpleidingNL: string | null;
+  Instelling: string | null;
+  Plaats: string | null;
+  Van: string | null;
+  TotEnMet: string | null;
+};
+
+type ApiSecondaryFunction = {
+  Persoon_Id: string;
+  Omschrijving: string | null;
+  Van: string | null;
+  TotEnMet: string | null;
+  Soort: string | null;
+  Toelichting: string | null;
 };
 
 type ApiMotion = {
@@ -76,6 +124,7 @@ type ApiZaakActor = {
 };
 
 const defaultApiUrl = "https://gegevensmagazijn.tweedekamer.nl/OData/v5";
+const memberProfileCacheSeconds = 24 * 60 * 60;
 
 function isVotingDecision(decision: ApiDecision): boolean {
   const type = decision.Soort?.toLocaleLowerCase("nl-NL") ?? "";
@@ -152,6 +201,106 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
   }
 
   return motions;
+}
+
+export async function getMemberProfiles(personIds: string[]): Promise<MemberProfile[]> {
+  const uniqueIds = [...new Set(personIds)]
+    .filter((id) => /^[0-9a-f-]{36}$/i.test(id))
+    .sort();
+  if (uniqueIds.length === 0) return [];
+
+  const apiUrl = process.env.TWEEDEKAMER_API_URL ?? defaultApiUrl;
+  const baseUrl = apiUrl.replace(/\/$/, "");
+  const request = async <T>(entity: string, query: URLSearchParams) => {
+    const response = await fetch(`${baseUrl}/${entity}?${query}`, {
+      next: { revalidate: memberProfileCacheSeconds },
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(45_000),
+    });
+    if (!response.ok) throw new Error(`Tweede Kamer API returned ${response.status}`);
+    return (await response.json() as ODataResponse<T>).value;
+  };
+
+  const chunks = Array.from({ length: Math.ceil(uniqueIds.length / 10) }, (_, index) =>
+    uniqueIds.slice(index * 10, (index + 1) * 10),
+  );
+  const results: Array<[ApiPerson[], ApiCareer[], ApiEducation[], ApiSecondaryFunction[]]> = [];
+  for (let index = 0; index < chunks.length; index += 2) {
+    const batchResults = await Promise.all(chunks.slice(index, index + 2).map(async (ids) => {
+      const filter = ids.map((id) => `Persoon_Id eq ${id}`).join(" or ");
+      const personFilter = ids.map((id) => `Id eq ${id}`).join(" or ");
+      const responses = await Promise.allSettled([
+        request<ApiPerson>("Persoon", new URLSearchParams({
+          $filter: personFilter,
+          $select: "Id,Voornamen,Achternaam,Functie,Geboortedatum,Geboorteplaats",
+        })),
+        request<ApiCareer>("PersoonLoopbaan", new URLSearchParams({
+          $filter: `${filter} and Verwijderd eq false`,
+          $select: "Persoon_Id,Functie,Werkgever,Plaats,Van,TotEnMet",
+          $orderby: "Persoon_Id,Volgorde",
+        })),
+        request<ApiEducation>("PersoonOnderwijs", new URLSearchParams({
+          $filter: `${filter} and Verwijderd eq false`,
+          $select: "Persoon_Id,OpleidingNL,Instelling,Plaats,Van,TotEnMet",
+          $orderby: "Persoon_Id,Volgorde",
+        })),
+        request<ApiSecondaryFunction>("PersoonNevenfunctie", new URLSearchParams({
+          $filter: `${filter} and Verwijderd eq false`,
+          $select: "Persoon_Id,Omschrijving,Van,TotEnMet,Soort,Toelichting",
+          $orderby: "Persoon_Id,Volgorde",
+        })),
+      ]);
+      return responses.map((response, responseIndex) => {
+        if (response.status === "fulfilled") return response.value;
+        console.warn("Tweede Kamer-profieldeel kon niet worden opgehaald.", {
+          entity: ["Persoon", "PersoonLoopbaan", "PersoonOnderwijs", "PersoonNevenfunctie"][responseIndex],
+          ids,
+          error: response.reason,
+        });
+        return [];
+      }) as [
+        ApiPerson[],
+        ApiCareer[],
+        ApiEducation[],
+        ApiSecondaryFunction[],
+      ];
+    }));
+    results.push(...batchResults);
+  }
+  const people = results.flatMap(([items]) => items);
+  const careers = results.flatMap(([, items]) => items);
+  const education = results.flatMap(([, , items]) => items);
+  const secondaryFunctions = results.flatMap(([, , , items]) => items);
+
+  return people.map((person) => ({
+    id: person.Id,
+    firstName: person.Voornamen,
+    lastName: person.Achternaam,
+    role: person.Functie,
+    birthDate: person.Geboortedatum,
+    birthPlace: person.Geboorteplaats,
+    education: education.filter((item) => item.Persoon_Id === person.Id).map((item) => ({
+      title: item.OpleidingNL,
+      institution: item.Instelling,
+      place: item.Plaats,
+      from: item.Van,
+      to: item.TotEnMet,
+    })),
+    careers: careers.filter((item) => item.Persoon_Id === person.Id).map((item) => ({
+      title: item.Functie,
+      employer: item.Werkgever,
+      place: item.Plaats,
+      from: item.Van,
+      to: item.TotEnMet,
+    })),
+    secondaryFunctions: secondaryFunctions.filter((item) => item.Persoon_Id === person.Id).map((item) => ({
+      description: item.Omschrijving,
+      from: item.Van,
+      to: item.TotEnMet,
+      type: item.Soort,
+      explanation: item.Toelichting,
+    })),
+  }));
 }
 
 export async function getMotionDetail(id: string): Promise<MotionDetail> {
