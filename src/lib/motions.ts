@@ -241,9 +241,7 @@ async function getMotionText(
         continue;
       }
 
-    const { createRequire } = await import("node:module");
-    const require = createRequire(import.meta.url);
-    const { PDFParse } = require("pdf-parse") as typeof import("pdf-parse");
+    const { PDFParse } = await import("pdf-parse");
     const parser = new PDFParse({ data: Buffer.from(await response.arrayBuffer()) });
     try {
       const result = await parser.getText();
