@@ -579,8 +579,8 @@ function getSubmittingMembers(actors: ApiZaakActor[] | undefined): MotionMember[
 }
 
 async function extractPdfText(data: Buffer): Promise<string> {
-  const { PDFParse } = await import("pdf-parse");
   const { getData: getPdfWorkerData } = await import(/* webpackIgnore: true */ "pdf-parse/worker");
+  const { PDFParse } = await import("pdf-parse");
   PDFParse.setWorker(getPdfWorkerData());
   const parser = new PDFParse({ data });
   try {

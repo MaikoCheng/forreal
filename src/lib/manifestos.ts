@@ -140,8 +140,8 @@ async function buildManifestoScores(): Promise<ManifestoScores> {
   const directory = path.join(process.cwd(), "data", "manifestos");
   const entries = await Promise.all(
     Object.entries(partyFiles).map(async ([party, filename]) => {
-      const { PDFParse } = await import("pdf-parse");
       const { getData: getPdfWorkerData } = await import(/* webpackIgnore: true */ "pdf-parse/worker");
+      const { PDFParse } = await import("pdf-parse");
       PDFParse.setWorker(getPdfWorkerData());
       const parser = new PDFParse({
         data: await readFile(path.join(directory, filename)),
