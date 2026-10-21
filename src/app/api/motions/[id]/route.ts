@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 import { getMotionDetail } from "@/lib/motions";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await connection();
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) {
     return NextResponse.json({ error: "Ongeldig motie-id." }, { status: 400 });

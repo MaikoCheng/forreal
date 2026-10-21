@@ -13,7 +13,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PolitiQ | Zie hoe Nederland stemt",
+  title: "ForReal",
   description: "Een helder live overzicht van moties en stemmingen in de Tweede Kamer.",
 };
 

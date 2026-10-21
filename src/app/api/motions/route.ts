@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 import { getMotions } from "@/lib/motions";
 
 export async function GET() {
+  await connection();
   try {
     const startOfYear = `${new Date().getFullYear()}-01-01T00:00:00Z`;
     return NextResponse.json({ motions: await getMotions(startOfYear) });
