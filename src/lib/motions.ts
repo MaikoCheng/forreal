@@ -1,3 +1,5 @@
+import { PDFParse } from "pdf-parse";
+
 export type Motion = {
   id: string;
   number: string;
@@ -200,9 +202,6 @@ async function getMotionText(documentNumber: string): Promise<string> {
       return unavailableMotionText;
     }
 
-    const { createRequire } = await import("node:module");
-    const require = createRequire(import.meta.url);
-    const { PDFParse } = require("pdf-parse") as typeof import("pdf-parse");
     const parser = new PDFParse({ data: Buffer.from(await response.arrayBuffer()) });
     try {
       const result = await parser.getText();
