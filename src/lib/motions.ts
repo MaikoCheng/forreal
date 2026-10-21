@@ -40,8 +40,7 @@ type ApiMotion = {
   Id: string;
   Nummer: string;
   Onderwerp: string | null;
-  GestartOp: string | null;
-  Status: string | null;
+  Datum: string | null;
   Vergaderjaar: string | null;
   Besluit?: ApiDecision[];
   Document?: ApiDocument[];
@@ -50,37 +49,43 @@ type ApiMotion = {
 
 type ApiVote = {
   Soort: string | null;
-  ActorFractie: string | null;
-  ActorNaam: string | null;
+  FractieNaam: string | null;
+  Naam: string | null;
   Persoon_Id: string | null;
 };
 
 type ApiDecision = {
-  BesluitSoort: string | null;
+  Soort: string | null;
+  Tekst: string | null;
   Stemming?: ApiVote[];
 };
 
 type ApiDocument = {
   Soort: string | null;
-  DocumentNummer: string | null;
+  Nummer: string | null;
   HuidigeDocumentVersie?: {
     ExterneIdentifier: string | null;
   };
 };
 
 type ApiZaakActor = {
-  ActorFractie: string | null;
-  ActorNaam: string | null;
-  Relatie: string | null;
+  FractieNaam: string | null;
+  Naam: string | null;
+  Rol: string | null;
   Persoon_Id: string | null;
 };
 
-const defaultApiUrl = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0";
+const defaultApiUrl = "https://gegevensmagazijn.tweedekamer.nl/OData/v5";
+
+function isVotingDecision(decision: ApiDecision): boolean {
+  const type = decision.Soort?.toLocaleLowerCase("nl-NL") ?? "";
+  return type.startsWith("stemmen") || type.startsWith("stemming");
+}
 
 function getOutcome(decisions: ApiDecision[] | undefined): Motion["outcome"] {
-  const vote = decisions?.find((decision) => decision.BesluitSoort?.startsWith("Stemmen"));
+  const vote = decisions?.find(isVotingDecision);
   if (!vote) return "Nog niet gestemd";
-  return vote.BesluitSoort?.toLocaleLowerCase("nl-NL").includes("aangenomen")
+  return `${vote.Soort ?? ""} ${vote.Tekst ?? ""}`.toLocaleLowerCase("nl-NL").includes("aangenomen")
     ? "Aangenomen"
     : "Niet aangenomen";
 }
@@ -93,12 +98,12 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
 
   while (true) {
     const query = new URLSearchParams({
-      $filter: `Soort eq 'Motie' and Verwijderd eq false and GestartOp ge ${startOfYear}`,
-      $orderby: "GestartOp desc",
+      $filter: `Soort eq 'Motie' and Verwijderd eq false and Datum ge ${startOfYear}`,
+      $orderby: "Datum desc",
       $top: String(pageSize),
       $skip: String(skip),
-      $select: "Id,Nummer,Onderwerp,GestartOp,Status,Vergaderjaar",
-      $expand: "Besluit($select=BesluitSoort;$expand=Stemming($select=Soort,ActorFractie,ActorNaam,Persoon_Id)),ZaakActor($select=ActorFractie,ActorNaam,Relatie,Persoon_Id)",
+      $select: "Id,Nummer,Onderwerp,Datum,Vergaderjaar",
+      $expand: "Besluit($select=Soort,Tekst;$expand=Stemming($select=Soort,FractieNaam,Naam,Persoon_Id)),ZaakActor($select=FractieNaam,Naam,Rol,Persoon_Id)",
     });
     const response = await fetch(`${apiUrl.replace(/\/$/, "")}/Zaak?${query}`, {
       next: { revalidate: 60 },
@@ -112,14 +117,14 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
     const data = (await response.json()) as ODataResponse<ApiMotion>;
     motions.push(...data.value.map((motion) => {
       const votes = (motion.Besluit ?? [])
-        .filter((decision) => decision.BesluitSoort?.startsWith("Stemmen"))
+        .filter(isVotingDecision)
         .flatMap((decision) => decision.Stemming ?? [])
         .flatMap((vote): MotionVote[] => {
-          const party = vote.ActorFractie ?? vote.ActorNaam;
+          const party = vote.FractieNaam ?? vote.Naam;
           if (!party || vote.Soort === null) return [];
           const stance = normalizeVoteStance(vote.Soort);
           return stance
-            ? [{ party, personId: vote.Persoon_Id, name: vote.ActorNaam, stance }]
+            ? [{ party, personId: vote.Persoon_Id, name: vote.Naam, stance }]
             : [];
         });
       const submittingMembers = getSubmittingMembers(motion.ZaakActor);
@@ -127,15 +132,15 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
         id: motion.Id,
         number: motion.Nummer,
         subject: motion.Onderwerp ?? "Onderwerp niet beschikbaar",
-        startedAt: motion.GestartOp,
-        status: motion.Status,
+        startedAt: motion.Datum,
+        status: null,
         meetingYear: motion.Vergaderjaar,
-        hasVote: (motion.Besluit ?? []).some((decision) => decision.BesluitSoort?.startsWith("Stemmen")),
+        hasVote: (motion.Besluit ?? []).some(isVotingDecision),
         outcome: getOutcome(motion.Besluit),
         submittingParties: [...new Set(
           (motion.ZaakActor ?? [])
-            .flatMap((actor) => actor.Relatie === "Indiener" && actor.ActorFractie
-              ? [actor.ActorFractie]
+            .flatMap((actor) => actor.Rol === "Indiener" && actor.FractieNaam
+              ? [actor.FractieNaam]
               : []),
         )],
         submittingMembers,
@@ -152,8 +157,8 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
 export async function getMotionDetail(id: string): Promise<MotionDetail> {
   const apiUrl = process.env.TWEEDEKAMER_API_URL ?? defaultApiUrl;
   const query = new URLSearchParams({
-    $select: "Id,Nummer,Onderwerp,GestartOp,Status,Vergaderjaar",
-    $expand: "Besluit($select=BesluitSoort;$expand=Stemming($select=Soort,ActorFractie,ActorNaam,Persoon_Id)),Document($select=Soort,DocumentNummer;$expand=HuidigeDocumentVersie($select=ExterneIdentifier)),ZaakActor($select=ActorFractie,ActorNaam,Relatie,Persoon_Id)",
+    $select: "Id,Nummer,Onderwerp,Datum,Vergaderjaar",
+    $expand: "Besluit($select=Soort,Tekst;$expand=Stemming($select=Soort,FractieNaam,Naam,Persoon_Id)),Document($select=Soort,Nummer;$expand=HuidigeDocumentVersie($select=ExterneIdentifier)),ZaakActor($select=FractieNaam,Naam,Rol,Persoon_Id)",
   });
   const response = await fetch(
     `${apiUrl.replace(/\/$/, "")}/Zaak(${id})?${query}`,
@@ -170,27 +175,29 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
 
   const motion = (await response.json()) as ApiMotion;
   const votes = (motion.Besluit ?? [])
-    .filter((decision) => decision.BesluitSoort?.startsWith("Stemmen"))
+    .filter(isVotingDecision)
     .flatMap((decision) => decision.Stemming ?? [])
     .flatMap((vote): MotionVote[] => {
-      const party = vote.ActorFractie ?? vote.ActorNaam;
+      const party = vote.FractieNaam ?? vote.Naam;
       if (!party || vote.Soort === null) return [];
       const stance = normalizeVoteStance(vote.Soort);
       return stance
-        ? [{ party, personId: vote.Persoon_Id, name: vote.ActorNaam, stance }]
+        ? [{ party, personId: vote.Persoon_Id, name: vote.Naam, stance }]
         : [];
     });
   const outcome = getOutcome(motion.Besluit);
   const submittingParties = [...new Set(
     (motion.ZaakActor ?? [])
-      .flatMap((actor) => actor.Relatie === "Indiener" && actor.ActorFractie
-        ? [actor.ActorFractie]
+      .flatMap((actor) => actor.Rol === "Indiener" && actor.FractieNaam
+        ? [actor.FractieNaam]
         : []),
   )];
   const submittingMembers = getSubmittingMembers(motion.ZaakActor);
-  const document = motion.Document?.find((item) => item.Soort === "Motie");
-  const text = document?.DocumentNummer
-    ? await getMotionText(document.DocumentNummer, {
+  const document = motion.Document?.find((item) =>
+    item.Soort?.toLocaleLowerCase("nl-NL").startsWith("motie"),
+  );
+  const text = document?.Nummer
+      ? await getMotionText(document.Nummer, {
         Nummer: motion.Nummer,
         Onderwerp: motion.Onderwerp,
         submittingParties,
@@ -202,8 +209,8 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
     id: motion.Id,
     number: motion.Nummer,
     subject: motion.Onderwerp ?? "Onderwerp niet beschikbaar",
-    startedAt: motion.GestartOp,
-    status: motion.Status,
+    startedAt: motion.Datum,
+    status: null,
     meetingYear: motion.Vergaderjaar,
     hasVote: votes.length > 0 || outcome !== "Nog niet gestemd",
     outcome,
@@ -227,16 +234,33 @@ function normalizeVoteStance(value: string): MotionVote["stance"] | null {
 function getSubmittingMembers(actors: ApiZaakActor[] | undefined): MotionMember[] {
   return [...new Map(
     (actors ?? [])
-      .filter((actor) => actor.Relatie === "Indiener" && actor.Persoon_Id && actor.ActorNaam)
+      .filter((actor) => actor.Rol === "Indiener" && actor.Persoon_Id && actor.Naam)
       .map((actor) => [
         actor.Persoon_Id as string,
         {
           personId: actor.Persoon_Id as string,
-          name: actor.ActorNaam as string,
-          party: actor.ActorFractie,
+          name: actor.Naam as string,
+          party: actor.FractieNaam,
         },
       ]),
   ).values()];
+}
+
+async function extractPdfText(data: Buffer): Promise<string> {
+  const { PDFParse } = await import("pdf-parse");
+  const { getData: getPdfWorkerData } = await import(/* webpackIgnore: true */ "pdf-parse/worker");
+  PDFParse.setWorker(getPdfWorkerData());
+  const parser = new PDFParse({ data });
+  try {
+    return (await parser.getText()).text;
+  } finally {
+    await parser.destroy();
+  }
+}
+
+async function extractDocxText(data: Buffer): Promise<string> {
+  const mammoth = await import("mammoth");
+  return (await mammoth.extractRawText({ buffer: data })).value;
 }
 
 async function getMotionText(
@@ -268,7 +292,9 @@ async function getMotionText(
         signal: AbortSignal.timeout(15_000),
       });
       const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
-      if (!response.ok || !contentType.includes("pdf")) {
+      const isPdf = contentType.includes("pdf");
+      const isDocx = contentType.includes("wordprocessingml.document");
+      if (!response.ok || (!isPdf && !isDocx)) {
         const log = {
           ...logContext,
           url,
@@ -279,28 +305,25 @@ async function getMotionText(
         if (index < urls.length - 1) {
           console.warn("Primaire motiedocument-URL is niet beschikbaar; fallback wordt geprobeerd.", log);
         } else {
-          console.error("Motiedocument kon niet als PDF worden opgehaald.", log);
+          console.error("Motiedocument kon niet als PDF of DOCX worden opgehaald.", log);
         }
         continue;
       }
 
-    const { PDFParse } = await import("pdf-parse");
-    const parser = new PDFParse({ data: Buffer.from(await response.arrayBuffer()) });
-    try {
-      const result = await parser.getText();
-      const text = result.text.replace(/\r\n/g, "\n").trim();
+      const documentData = Buffer.from(await response.arrayBuffer());
+      const rawText = isPdf
+        ? await extractPdfText(documentData)
+        : await extractDocxText(documentData);
+      const text = rawText.replace(/\r\n/g, "\n").trim();
       const motionStart = text.search(/\bDe\s+kamer\b/i);
       const motionText = (motionStart >= 0 ? text.slice(motionStart) : text)
         .replace(/\s*KST-[\s\S]*$/i, "")
         .replace(/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gmi, "")
         .trim();
       if (!motionText) {
-        console.error("PDF bevat geen herkenbare motietekst.", logContext);
+        console.error("Document bevat geen herkenbare motietekst.", logContext);
       }
       return motionText || "De tekst van deze motie is niet beschikbaar.";
-    } finally {
-      await parser.destroy();
-    }
     } catch (error) {
       if (error instanceof DOMException && error.name === "TimeoutError") {
         console.error("Ophalen van motietekst duurde te lang.", { ...logContext, url, error });

@@ -10,6 +10,7 @@
     "classify:manifestos": "node --env-file=.env.local scripts/classify-manifestos.mjs"
   },
   "dependencies": {
+    "mammoth": "^1.13.0",
     "next": "16.4.2",
     "pdf-parse": "^2.4.5",
     "react": "19.3.0",

@@ -17,7 +17,9 @@ Open daarna [http://localhost:3000](http://localhost:3000).
 
 De route `GET /api/motions` haalt de laatste moties server-side op. Daarmee blijft de upstream-configuratie buiten de browser en kan de route op Vercel gecachet worden. De basis-URL kan worden aangepast met `TWEEDEKAMER_API_URL`; zie [.env.example](./.env.example).
 
-De loader gebruikt de live `Zaak`-entiteit met `$filter=Soort eq 'Motie'` en haalt de zes meest recente moties op. De route geeft genormaliseerde JSON terug aan eventuele andere clients.
+De loader gebruikt de v5 `Zaak`-entiteit met `$filter=Soort eq 'Motie'` en haalt alle moties vanaf het begin van het kalenderjaar op, in pagina's van 250. De v5-migratie gebruikt onder andere `Datum` (voorheen `GestartOp`), `Nummer` (voorheen `DocumentNummer`) en `Naam`/`FractieNaam`/`Rol` (voorheen `ActorNaam`/`ActorFractie`/`Relatie`). Gewijzigde moties worden herkend als `Motie (gewijzigd/nader)` en hun tekst kan uit PDF- en DOCX-documenten worden gehaald. De route geeft genormaliseerde JSON terug aan eventuele andere clients.
+
+De nieuwe API maakt verdere uitbreidingen mogelijk zonder een andere gegevensbron, bijvoorbeeld ledenprofielen via `Persoon`, fracties en zetelverdelingen via `Fractie`/`FractieZetel`, commissie- en vergaderinformatie via `Commissie`/`Vergadering`, en toezeggingen via `Toezegging`/`ToegezegdAan`. Gebruik `$metadata` en de entity-setlijst op de [v5 API](https://gegevensmagazijn.tweedekamer.nl/OData/v5) als actuele bron voor velden en relaties.
 
 ## Manifesto-classificatie
 
