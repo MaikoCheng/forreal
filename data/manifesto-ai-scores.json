@@ -1,0 +1,564 @@
+{
+  "version": 2,
+  "generatedAt": "2026-10-21T17:29:28.939Z",
+  "parties": {
+    "bbb": {
+      "sourceFile": "BBBVerkiezingsprogrammaTK2025.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.9,
+          "y": 0.9
+        },
+        "economy-migration": {
+          "x": 0.7,
+          "y": 1
+        },
+        "welfare": {
+          "x": 0.6,
+          "y": 0.7
+        },
+        "order-nation": {
+          "x": 1,
+          "y": 1
+        },
+        "climate-economy": {
+          "x": 0,
+          "y": 1
+        },
+        "cultural": {
+          "x": 0,
+          "y": 0.5
+        }
+      }
+    },
+    "cda": {
+      "sourceFile": "CDAVerkiezingsprogrammaTK2025.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.7,
+          "y": 0.6
+        },
+        "economy-migration": {
+          "x": 0.4,
+          "y": 0.8
+        },
+        "welfare": {
+          "x": 0.6,
+          "y": 0.5
+        },
+        "order-nation": {
+          "x": 0.4,
+          "y": 0.7
+        },
+        "climate-economy": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "cultural": {
+          "x": 0.4,
+          "y": 0.6
+        }
+      }
+    },
+    "christenunie": {
+      "sourceFile": "CUVerkiezingsprogrammaTK2025.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.6,
+          "y": 0.7
+        },
+        "economy-migration": {
+          "x": 0.5,
+          "y": 0.6
+        },
+        "welfare": {
+          "x": 0.7,
+          "y": 0.7
+        },
+        "order-nation": {
+          "x": 0.7,
+          "y": 0.3
+        },
+        "climate-economy": {
+          "x": 0.5,
+          "y": 0.6
+        },
+        "cultural": {
+          "x": 0.7,
+          "y": 0.7
+        }
+      }
+    },
+    
+    "fvd": {
+      "sourceFile": "FVDverkiezingsprogramma2025.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 1,
+          "y": 1
+        },
+        "economy-migration": {
+          "x": 1,
+          "y": 1
+        },
+        "welfare": {
+          "x": 1,
+          "y": 0
+        },
+        "order-nation": {
+          "x": 1,
+          "y": 1
+        },
+        "climate-economy": {
+          "x": 1,
+          "y": 0
+        },
+        "cultural": {
+          "x": 1,
+          "y": 1
+        }
+      }
+    },
+    "pro": {
+      "sourceFile": "GroenLinksPvdAVerkiezingsprogramma2025.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.9,
+          "y": 0.8
+        },
+        "economy-migration": {
+          "x": 0.9,
+          "y": 0.8
+        },
+        "welfare": {
+          "x": 0.9,
+          "y": 0.9
+        },
+        "order-nation": {
+          "x": 0.9,
+          "y": 0.9
+        },
+        "climate-economy": {
+          "x": 0.9,
+          "y": 0.8
+        },
+        "cultural": {
+          "x": 0.9,
+          "y": 0.8
+        }
+      }
+    },
+    "ja21": {
+      "sourceFile": "JA21VerkiezingsprogrammaTK2025definitief.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.9,
+          "y": 0.8
+        },
+        "economy-migration": {
+          "x": 0.8,
+          "y": 0.9
+        },
+        "welfare": {
+          "x": 0.7,
+          "y": 0.8
+        },
+        "order-nation": {
+          "x": 0.8,
+          "y": 0.9
+        },
+        "climate-economy": {
+          "x": 0.8,
+          "y": 0.7
+        },
+        "cultural": {
+          "x": 0.8,
+          "y": 0.8
+        }
+      }
+    },
+    "nsc": {
+      "sourceFile": "NSCverkiezingsprogramma15092ca4765c16c.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.8,
+          "y": 0.8
+        },
+        "economy-migration": {
+          "x": 0.7,
+          "y": 0.8
+        },
+        "welfare": {
+          "x": 0.7,
+          "y": 0.7
+        },
+        "order-nation": {
+          "x": 0.8,
+          "y": 0.8
+        },
+        "climate-economy": {
+          "x": 0.6,
+          "y": 0.7
+        },
+        "cultural": {
+          "x": 0.7,
+          "y": 0.7
+        }
+      }
+    },
+    "pvdd": {
+      "sourceFile": "PVDDprogrammatweedekamerverkiezingenokt2025.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.9,
+          "y": 0.9
+        },
+        "economy-migration": {
+          "x": 0.8,
+          "y": 0.8
+        },
+        "welfare": {
+          "x": 0.8,
+          "y": 0.8
+        },
+        "order-nation": {
+          "x": 0.8,
+          "y": 0.8
+        },
+        "climate-economy": {
+          "x": 0.8,
+          "y": 0.8
+        },
+        "cultural": {
+          "x": 0.8,
+          "y": 0.8
+        }
+      }
+    },
+    "pvv": {
+      "sourceFile": "PVVVerkiezingsprogrammaTK2025.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.9,
+          "y": 0.9
+        },
+        "economy-migration": {
+          "x": 0.1,
+          "y": 0.9
+        },
+        "welfare": {
+          "x": 0.7,
+          "y": 0.4
+        },
+        "order-nation": {
+          "x": 0.1,
+          "y": 0.9
+        },
+        "climate-economy": {
+          "x": 0.1,
+          "y": 0.1
+        },
+        "cultural": {
+          "x": 0.1,
+          "y": 0.1
+        }
+      }
+    },
+    "sgp": {
+      "sourceFile": "VerkiezingsprogrammaSGP2025eindversie.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.8,
+          "y": 0.7
+        },
+        "economy-migration": {
+          "x": 0.6,
+          "y": 0.8
+        },
+        "welfare": {
+          "x": 0.7,
+          "y": 0.4
+        },
+        "order-nation": {
+          "x": 0.8,
+          "y": 0.7
+        },
+        "climate-economy": {
+          "x": 0.6,
+          "y": 0.5
+        },
+        "cultural": {
+          "x": 0.8,
+          "y": 0.7
+        }
+      }
+    },
+    "sp": {
+      "sourceFile": "SPverkiezingsprogrammaTK2025.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.9,
+          "y": 0.7
+        },
+        "economy-migration": {
+          "x": 0.9,
+          "y": 0.8
+        },
+        "welfare": {
+          "x": 0.9,
+          "y": 0.9
+        },
+        "order-nation": {
+          "x": 0.7,
+          "y": 0.4
+        },
+        "climate-economy": {
+          "x": 0.8,
+          "y": 0.8
+        },
+        "cultural": {
+          "x": 0.8,
+          "y": 0.8
+        }
+      }
+    },
+    "50plus": {
+      "sourceFile": "Verkiezingsprogramma2025202950PLUS.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.6,
+          "y": 0.7
+        },
+        "economy-migration": {
+          "x": 0.55,
+          "y": 0.8
+        },
+        "welfare": {
+          "x": 0.8,
+          "y": 0.8
+        },
+        "order-nation": {
+          "x": 0.8,
+          "y": 0.7
+        },
+        "climate-economy": {
+          "x": 0.4,
+          "y": 0.5
+        },
+        "cultural": {
+          "x": 0.7,
+          "y": 0.8
+        }
+      }
+    },
+    "volt": {
+      "sourceFile": "VoltVerkiezingsprogrammaTK2025.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.4,
+          "y": 0.7
+        },
+        "economy-migration": {
+          "x": 0.6,
+          "y": 0.8
+        },
+        "welfare": {
+          "x": 0.7,
+          "y": 0.6
+        },
+        "order-nation": {
+          "x": 0.8,
+          "y": 0.9
+        },
+        "climate-economy": {
+          "x": 0.8,
+          "y": 0.7
+        },
+        "cultural": {
+          "x": 0.9,
+          "y": 0.8
+        }
+      }
+    },
+    "vvd": {
+      "sourceFile": "VVDVerkiezingsprogrammaTK2025.pdf",
+      "selectionVersion": 2,
+      "scores": {
+        "classic": {
+          "x": 0.8,
+          "y": 0.7
+        },
+        "economy-migration": {
+          "x": 0.8,
+          "y": 0.7
+        },
+        "welfare": {
+          "x": 0.7,
+          "y": 0.3
+        },
+        "order-nation": {
+          "x": 0.8,
+          "y": 0.6
+        },
+        "climate-economy": {
+          "x": 0.5,
+          "y": 0.7
+        },
+        "cultural": {
+          "x": 0.6,
+          "y": 0.8
+        }
+      }
+    }
+  },
+  "completedChunks": {
+    "bbb": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "cda": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "christenunie": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "d66": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "fvd": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ],
+    "pro": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27
+    ],
+    "ja21": [
+      0,
+      1
+    ]
+  }
+}

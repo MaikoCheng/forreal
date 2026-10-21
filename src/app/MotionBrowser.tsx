@@ -3,13 +3,17 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { formatMotionDate, type Motion, type MotionDetail } from "@/lib/motions";
+import PartySpectrum from "./PartySpectrum";
 
 const themeKeywords: Record<string, string[]> = {
   Wonen: [
     "woon",
     "woning",
     "huur",
+    "hypotheek",
+    "nieuwbouw",
     "huisvesting",
+    "huurcontract",
     "woningmarkt",
     "woningnood",
     "woningbouw",
@@ -66,13 +70,21 @@ const themeKeywords: Record<string, string[]> = {
 
   Zorg: [
     "zorg",
+    "beperking",
     "PTSS",
+    "health",
+    "drugs",
+    "arbo",
+    "alcohol",
+    "hulpverlening",
+    "zorgplicht",
     "PTSS-loket",
     "GGZ",
     "medisch",
     "ziekenhuis",
     "kraam",
     "gezondheid",
+    "zorginkoop",
     "patiënt",
     "verpleging",
     "medicatie",
@@ -151,8 +163,11 @@ const themeKeywords: Record<string, string[]> = {
     "superziekenhuis",
     "luisterlijn",
     "koorts",
+    "mental",
+    "mentaal",
     "griep",
     "vaccin",
+    "handicap",
     "ziekte",
   ],
 
@@ -199,6 +214,17 @@ const themeKeywords: Record<string, string[]> = {
   "Klimaat & Milieu": [
     "klimaat",
     "stikstof",
+    "habitat",
+    "natuur",
+    "pfas",
+    "pfas-stoffen",
+    "CO2",
+    "diepzeemijnbouw",
+    "De MER",
+    "CO2-uitstoot",
+    "vergroen",
+    "gaswin",
+    "schiphol",
     "fossiel",
     "energie",
     "duurzaam",
@@ -332,6 +358,20 @@ const themeKeywords: Record<string, string[]> = {
   "Economie & Werk": [
     "economie",
     "arbeid",
+    "gefinanci",
+    "toeslag",
+    "hypotheek",
+    "huurcontract",
+    "rekenkamer",
+    "fonds",
+    "leefbaar",
+    "boxhop",
+    "investering",
+    "financi",
+    "investeerders",
+    "financieringsconstructie",
+    "handel",
+    "bezuinig",
     "belastingen",
     "krediet",
     "koop nu",
@@ -365,6 +405,9 @@ const themeKeywords: Record<string, string[]> = {
     "belastingbeleid",
     "belastingtarieven",
     "belastingdienst",
+    "budget",
+    "VWS-begroting",
+
     "belastingontwijking",
     "belastingontduiking",
     "startrekening",
@@ -545,6 +588,8 @@ const themeKeywords: Record<string, string[]> = {
     "europese unie",
     "europese commissie",
     "europese raad",
+    "eu-verband",
+    "europese",
     "europese parlement",
     "europese wetgeving",
     "europese samenwerking",
@@ -571,6 +616,7 @@ const themeKeywords: Record<string, string[]> = {
     "europese cohesie",
     "europese innovatie",
     "europese digitalisering",
+    "eu-brede",
     "europese infrastructuur",
     "europese transport",
     "europese landbouw",
@@ -639,6 +685,8 @@ const themeKeywords: Record<string, string[]> = {
   "Openbare Orde & Veiligheid": [
     "openbare orde",
     "politie",
+    "sloop",
+    "crisis",
     "boa",
     "ondermijning",
     "georganiseerde misdaad",
@@ -662,6 +710,8 @@ const themeKeywords: Record<string, string[]> = {
   "Infrastructuur & Mobiliteit": [
     "infrastructuur",
     "mobiliteit",
+    "elektri",
+    "infra",
     "openbaar vervoer",
     "spoor",
     "spoorweg",
@@ -690,6 +740,9 @@ const themeKeywords: Record<string, string[]> = {
   "Bestuur & Democratie": [
     "democratie",
     "verkiezing",
+    "burgemeester",
+    "overheid",
+    "reglement",
     "stembiljet",
     "stemrecht",
     "kiesrecht",
@@ -716,6 +769,10 @@ const themeKeywords: Record<string, string[]> = {
   "Digitale Overheid & Technologie": [
     "digitalisering",
     "gluurbril",
+    "cyber",
+    "cookie",
+    "AI-voorziening",
+    "ict",
     "digitale overheid",
     "kunstmatige intelligentie",
     "digita",
@@ -743,6 +800,13 @@ const themeKeywords: Record<string, string[]> = {
   "Gezin, Jeugd & Emancipatie": [
     "gezin",
     "gezinnen",
+    "begrijpelijke taal",
+    "vereniging",
+    "sekswerk",
+    "sport",
+    "beperking",
+    "fitness",
+    "beweeg",
     "kinderen",
     "diversity",
     "jongeren",
@@ -776,6 +840,7 @@ const themeKeywords: Record<string, string[]> = {
     "visserij",
     "vissers",
     "garnalenvisserij",
+    
     "voedsel",
     "voedselveiligheid",
     "voedselzekerheid",
@@ -803,11 +868,26 @@ const themeKeywords: Record<string, string[]> = {
 
   "Buitenlandse Zaken & Mensenrechten": [
     "buitenlandse zaken",
+    "taiwan",
+    "sudan",
+    "joods",
+    "islam",
+    "moslim",
     "diplomatie",
+    "duits",
+    "belg",
+    "België",
+    "afghanistan",
+    "syrië",
+    "china",
+    "russische",
+    "rusland",
+    "russisch",
     "ambassade",
     "diplomaat",
     "internationaal recht",
     "mensenrechten",
+    "netanyahu",
     "vervolgde christenen",
     "persona non grata",
     "ontwikkelingssamenwerking",
@@ -847,8 +927,11 @@ const partyLogos: Record<string, string> = {
   christenunie: "/images/agents/christenunie.png",
   d66: "/images/agents/d66.png",
   denk: "/images/agents/denk.png",
+  "50plus": "/images/agents/50PLUS_(nl)_Logo.svg",
   fvd: "/images/agents/fvd.svg.webp",
   ja21: "/images/agents/ja21.svg.webp",
+  groepmarkuszower: "/images/agents/markuszower.jpg",
+  monakeijzer: "/images/agents/Mona_Keijzer,_January_2025.jpg",
   nsc: "/images/agents/NSC_partijlogo.svg",
   pvv: "/images/agents/pvv.png",
   pro: "/images/agents/PRO.jpg",
@@ -858,6 +941,15 @@ const partyLogos: Record<string, string> = {
   vvd: "/images/agents/vvd.svg.webp",
   pvdd: "/images/agents/partij_voor_de_dieren.jpg",
 };
+const portraitLogoPaths = new Set([
+  "/images/agents/markuszower.jpg",
+  "/images/agents/Mona_Keijzer,_January_2025.jpg",
+]);
+
+function logoFitClass(logo: string, baseClass: string): string {
+  return `${baseClass} ${portraitLogoPaths.has(logo) ? "object-cover" : "object-contain"}`;
+}
+
 function partyLogo(party: string): string | undefined {
   const normalizedParty = party.toLocaleLowerCase("nl-NL").replace(/[^a-z0-9]/g, "");
   const aliases: Record<string, string> = {
@@ -872,6 +964,8 @@ function partyLogo(party: string): string | undefined {
     staatkundiggereformeerdepartij: "sgp",
     volkspartijvoorvrijheiden: "vvd",
     groenlinkspvda: "pro",
+    markuszower: "groepmarkuszower",
+    keijzer: "monakeijzer",
   };
   return partyLogos[aliases[normalizedParty] ?? normalizedParty];
 }
@@ -1221,7 +1315,7 @@ export default function MotionBrowser() {
     <>
       <section
         id="partijen"
-        className="md3-browser border-y border-[var(--md-outline-variant)] py-14"
+        className="md3-browser border-y border-[var(--md-outline-variant)] py-10 sm:py-14"
       >
         <div className="mb-8 max-w-2xl">
           <p className="text-sm font-bold uppercase tracking-[0.15em] text-blue-600">
@@ -1250,7 +1344,7 @@ export default function MotionBrowser() {
           </div>
         ) : (
           <>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 cursor-pointer">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {parties.map((party) => {
                 const isSelected = selectedParty === partyKey(party.name);
                 const logo = partyLogo(party.name);
@@ -1264,7 +1358,7 @@ export default function MotionBrowser() {
                         : selectParty(partyKey(party.name))
                     }
                     aria-pressed={isSelected}
-                    className={`flex items-center cursor-pointer gap-3 rounded-2xl border p-4 text-left transition hover:border-blue-300 hover:shadow-sm ${isSelected ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 bg-white"}`}
+                    className={`flex min-h-20 items-center cursor-pointer gap-3 rounded-2xl border p-4 text-left transition hover:border-blue-300 hover:shadow-sm ${isSelected ? "border-blue-600 bg-blue-50 ring-2 ring-blue-100" : "border-slate-200 bg-white"}`}
                   >
                     {logo ? (
                       <Image
@@ -1272,7 +1366,7 @@ export default function MotionBrowser() {
                         alt=""
                         width={42}
                         height={42}
-                        className="size-11 rounded-full bg-white object-contain p-1"
+                        className={logoFitClass(logo, "size-11 rounded-full bg-white p-1")}
                       />
                     ) : (
                       <span className="grid size-11 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
@@ -1662,7 +1756,9 @@ export default function MotionBrowser() {
         )}
       </section>
 
-      <section id="moties" className="md3-browser py-14">
+      <PartySpectrum motions={motions} />
+
+      <section id="moties" className="md3-browser py-10 sm:py-14">
         <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-blue-600">
@@ -1690,7 +1786,7 @@ export default function MotionBrowser() {
           </label>
         </div>
 
-        <div className="mb-7 flex flex-wrap items-center gap-2">
+        <div className="-mx-1 mb-7 flex flex-nowrap items-center gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&>button]:shrink-0">
           <span className="mr-1 text-xs font-bold uppercase tracking-wider text-slate-400">
             Thema
           </span>
@@ -1730,7 +1826,7 @@ export default function MotionBrowser() {
           )}
         </div>
 
-        <div className="mb-7 flex flex-wrap items-center gap-2">
+        <div className="-mx-1 mb-7 flex flex-nowrap items-center gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&>button]:shrink-0">
           <span className="mr-1 text-xs font-bold uppercase tracking-wider text-slate-400">
             Stemming
           </span>
@@ -1749,7 +1845,7 @@ export default function MotionBrowser() {
           ))}
         </div>
 
-        <div className="mb-7 flex flex-wrap items-center gap-2">
+        <div className="-mx-1 mb-7 flex flex-nowrap items-center gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&>button]:shrink-0">
           <span className="mr-1 text-xs font-bold uppercase tracking-wider text-slate-400">
             Uitkomst
           </span>
@@ -1852,7 +1948,7 @@ export default function MotionBrowser() {
                 key={motion.id}
                 type="button"
                 onClick={() => openMotion(motion)}
-                className="flex w-full cursor-pointer flex-col gap-3 p-5 text-left transition hover:bg-blue-50/40 sm:flex-row sm:items-center sm:justify-between"
+                className="flex w-full cursor-pointer flex-col gap-3 p-4 text-left transition hover:bg-blue-50/40 sm:p-5 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <p className="mb-1 font-mono text-xs text-slate-400">
@@ -1906,15 +2002,15 @@ export default function MotionBrowser() {
                 ))}
               </select>
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
               <button
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                 disabled={currentPage === 1}
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-11 flex-1 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:px-4"
               >
                 ← Vorige
               </button>
-              <span className="min-w-24 text-center text-sm text-slate-500">
+              <span               className="min-w-20 text-center text-sm text-slate-500">
                 Pagina {currentPage} van {totalPages}
               </span>
               <button
@@ -1922,13 +2018,13 @@ export default function MotionBrowser() {
                   setPage((current) => Math.min(totalPages, current + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-11 flex-1 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none sm:px-4"
               >
                 Volgende →
               </button>
             </div>
             <nav
-              className="flex flex-wrap items-center justify-center gap-1"
+              className="hidden flex-wrap items-center justify-center gap-1 sm:flex"
               aria-label="Paginanavigatie"
             >
               {pageNumbers.map((pageNumber, index) =>
@@ -1978,7 +2074,7 @@ export default function MotionBrowser() {
                     setSelectedMotion(null);
                     setDetailError(false);
                   }}
-                  className="cursor-pointer rounded-lg px-3 py-2 text-2xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  className="grid min-h-11 min-w-11 size-11 shrink-0 cursor-pointer place-items-center rounded-lg text-2xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                   aria-label="Sluiten"
                 >
                   ×
@@ -2038,7 +2134,7 @@ export default function MotionBrowser() {
                                     alt=""
                                     width={24}
                                     height={24}
-                                    className="size-6 rounded-full object-contain"
+                                    className={logoFitClass(logo, "size-6 rounded-full")}
                                   />
                                 ) : (
                                   <span className="grid size-6 place-items-center rounded-full bg-white text-[10px] font-bold text-slate-500">
@@ -2117,7 +2213,7 @@ export default function MotionBrowser() {
                                             alt=""
                                             width={24}
                                             height={24}
-                                            className="size-6 rounded-full object-contain"
+                                            className={logoFitClass(logo, "size-6 rounded-full")}
                                           />
                                         ) : (
                                           <span className="grid size-6 place-items-center rounded-full bg-white text-[10px] font-bold text-slate-500">

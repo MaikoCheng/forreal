@@ -8,12 +8,21 @@ export type Motion = {
   hasVote: boolean;
   outcome: "Aangenomen" | "Niet aangenomen" | "Nog niet gestemd";
   submittingParties: string[];
+  submittingMembers: MotionMember[];
   votes: MotionVote[];
 };
 
+export type MotionMember = {
+  personId: string;
+  name: string;
+  party: string | null;
+};
+
 export type MotionVote = {
+  personId: string | null;
+  name: string | null;
   party: string;
-  stance: "Voor" | "Tegen";
+  stance: "Voor" | "Tegen" | "Niet deelgenomen";
 };
 
 export type MotionDetail = Motion & {
@@ -43,6 +52,7 @@ type ApiVote = {
   Soort: string | null;
   ActorFractie: string | null;
   ActorNaam: string | null;
+  Persoon_Id: string | null;
 };
 
 type ApiDecision = {
@@ -60,7 +70,9 @@ type ApiDocument = {
 
 type ApiZaakActor = {
   ActorFractie: string | null;
+  ActorNaam: string | null;
   Relatie: string | null;
+  Persoon_Id: string | null;
 };
 
 const defaultApiUrl = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0";
@@ -86,7 +98,7 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
       $top: String(pageSize),
       $skip: String(skip),
       $select: "Id,Nummer,Onderwerp,GestartOp,Status,Vergaderjaar",
-      $expand: "Besluit($select=BesluitSoort;$expand=Stemming($select=Soort,ActorFractie,ActorNaam)),ZaakActor($select=ActorFractie,Relatie)",
+      $expand: "Besluit($select=BesluitSoort;$expand=Stemming($select=Soort,ActorFractie,ActorNaam,Persoon_Id)),ZaakActor($select=ActorFractie,ActorNaam,Relatie,Persoon_Id)",
     });
     const response = await fetch(`${apiUrl.replace(/\/$/, "")}/Zaak?${query}`, {
       next: { revalidate: 60 },
@@ -105,10 +117,12 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
         .flatMap((vote): MotionVote[] => {
           const party = vote.ActorFractie ?? vote.ActorNaam;
           if (!party || vote.Soort === null) return [];
-          if (vote.Soort === "Voor") return [{ party, stance: "Voor" as const }];
-          if (vote.Soort === "Tegen") return [{ party, stance: "Tegen" as const }];
-          return [];
+          const stance = normalizeVoteStance(vote.Soort);
+          return stance
+            ? [{ party, personId: vote.Persoon_Id, name: vote.ActorNaam, stance }]
+            : [];
         });
+      const submittingMembers = getSubmittingMembers(motion.ZaakActor);
       return {
         id: motion.Id,
         number: motion.Nummer,
@@ -124,6 +138,7 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
               ? [actor.ActorFractie]
               : []),
         )],
+        submittingMembers,
         votes,
       };
     }));
@@ -138,7 +153,7 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
   const apiUrl = process.env.TWEEDEKAMER_API_URL ?? defaultApiUrl;
   const query = new URLSearchParams({
     $select: "Id,Nummer,Onderwerp,GestartOp,Status,Vergaderjaar",
-    $expand: "Besluit($select=BesluitSoort;$expand=Stemming($select=Soort,ActorFractie,ActorNaam)),Document($select=Soort,DocumentNummer;$expand=HuidigeDocumentVersie($select=ExterneIdentifier)),ZaakActor($select=ActorFractie,Relatie)",
+    $expand: "Besluit($select=BesluitSoort;$expand=Stemming($select=Soort,ActorFractie,ActorNaam,Persoon_Id)),Document($select=Soort,DocumentNummer;$expand=HuidigeDocumentVersie($select=ExterneIdentifier)),ZaakActor($select=ActorFractie,ActorNaam,Relatie,Persoon_Id)",
   });
   const response = await fetch(
     `${apiUrl.replace(/\/$/, "")}/Zaak(${id})?${query}`,
@@ -160,9 +175,10 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
     .flatMap((vote): MotionVote[] => {
       const party = vote.ActorFractie ?? vote.ActorNaam;
       if (!party || vote.Soort === null) return [];
-      if (vote.Soort === "Voor") return [{ party, stance: "Voor" as const }];
-      if (vote.Soort === "Tegen") return [{ party, stance: "Tegen" as const }];
-      return [];
+      const stance = normalizeVoteStance(vote.Soort);
+      return stance
+        ? [{ party, personId: vote.Persoon_Id, name: vote.ActorNaam, stance }]
+        : [];
     });
   const outcome = getOutcome(motion.Besluit);
   const submittingParties = [...new Set(
@@ -171,6 +187,7 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
         ? [actor.ActorFractie]
         : []),
   )];
+  const submittingMembers = getSubmittingMembers(motion.ZaakActor);
   const document = motion.Document?.find((item) => item.Soort === "Motie");
   const text = document?.DocumentNummer
     ? await getMotionText(document.DocumentNummer, {
@@ -191,9 +208,35 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
     hasVote: votes.length > 0 || outcome !== "Nog niet gestemd",
     outcome,
     submittingParties,
+    submittingMembers,
     votes,
     text,
   };
+}
+
+function normalizeVoteStance(value: string): MotionVote["stance"] | null {
+  const normalized = value.toLocaleLowerCase("nl-NL");
+  if (normalized === "voor") return "Voor";
+  if (normalized === "tegen") return "Tegen";
+  if (normalized.includes("afwezig") || normalized.includes("niet deelgenomen")) {
+    return "Niet deelgenomen";
+  }
+  return null;
+}
+
+function getSubmittingMembers(actors: ApiZaakActor[] | undefined): MotionMember[] {
+  return [...new Map(
+    (actors ?? [])
+      .filter((actor) => actor.Relatie === "Indiener" && actor.Persoon_Id && actor.ActorNaam)
+      .map((actor) => [
+        actor.Persoon_Id as string,
+        {
+          personId: actor.Persoon_Id as string,
+          name: actor.ActorNaam as string,
+          party: actor.ActorFractie,
+        },
+      ]),
+  ).values()];
 }
 
 async function getMotionText(

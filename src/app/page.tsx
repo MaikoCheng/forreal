@@ -1,10 +1,11 @@
 import Link from "next/link";
+import MemberBrowser from "./MemberBrowser";
 import MotionBrowser from "./MotionBrowser";
 
 export default async function Home() {
   return (
-    <main className="mx-auto min-h-screen max-w-[1440px] px-5 py-6 sm:px-8 lg:px-12">
-      <header className="flex items-center justify-between border-b border-[var(--md-outline-variant)] pb-5">
+    <main className="mx-auto min-h-screen w-full max-w-[1440px] overflow-x-hidden px-4 py-4 sm:px-8 sm:py-6 lg:px-12">
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-[var(--md-outline-variant)] pb-4 sm:pb-5">
         <Link
           href="/"
           className="flex items-center gap-3"
@@ -17,7 +18,7 @@ export default async function Home() {
             ForReal
           </span>
         </Link>
-        <nav className="hidden items-center gap-8 text-sm font-medium text-[var(--md-on-surface-variant)] md:flex">
+        <nav className="order-3 -mx-1 flex w-[calc(100%+0.5rem)] snap-x gap-5 overflow-x-auto px-1 pb-1 text-sm font-medium text-[var(--md-on-surface-variant)] md:order-none md:w-auto md:gap-8 md:overflow-visible md:px-0 md:pb-0">
           <a className="text-[var(--md-primary)]" href="#overzicht">
             Overzicht
           </a>
@@ -27,13 +28,25 @@ export default async function Home() {
           >
             Partijen
           </a>
+
+          <a
+            className="transition hover:text-[var(--md-primary)]"
+            href="#spectrums"
+          >
+            Spectrums
+          </a>
           <a
             className="transition hover:text-[var(--md-primary)]"
             href="#moties"
           >
             Moties
           </a>
-
+          <a
+            className="transition hover:text-[var(--md-primary)]"
+            href="#leden"
+          >
+            Kamerleden
+          </a>
           <a
             className="transition hover:text-[var(--md-primary)]"
             href="https://opendata.tweedekamer.nl/documentatie/odata-api"
@@ -43,7 +56,7 @@ export default async function Home() {
             Databron
           </a>
         </nav>
-        <div className="flex items-center gap-2 text-xs font-semibold text-[var(--md-on-surface-variant)]">
+        <div className="flex shrink-0 items-center gap-2 text-xs font-semibold text-[var(--md-on-surface-variant)]">
           <span className="size-2 animate-pulse rounded-full bg-emerald-600" />
           Live bijgewerkt
         </div>
@@ -51,50 +64,50 @@ export default async function Home() {
 
       <section
         id="overzicht"
-        className="grid gap-10 pb-14 pt-14 lg:grid-cols-[1fr_1.15fr] lg:items-end"
+        className="grid gap-8 pb-10 pt-10 sm:gap-10 sm:pb-14 sm:pt-14 lg:grid-cols-[1fr_1.15fr] lg:items-end"
       >
         <div>
           <p className="mb-5 text-sm font-bold uppercase tracking-[0.2em] text-[var(--md-primary)]">
             Tweede Kamer · live data
           </p>
-          <h1 className="max-w-xl text-5xl font-bold leading-[1.03] tracking-[-0.04em] text-[var(--md-on-surface)] sm:text-6xl">
+          <h1 className="max-w-xl text-4xl font-bold leading-[1.05] tracking-[-0.04em] text-[var(--md-on-surface)] sm:text-6xl">
             Zie hoe Nederlandse partijen jou ForReal representen.
           </h1>
           <p className="mt-6 max-w-lg text-lg leading-8 text-[var(--md-on-surface-variant)]">
             Volg moties, stemmingen en partijstandpunten in één helder
             overzicht. Gebouwd op de open data van de Tweede Kamer.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a href="#moties" className="md3-button md3-button-filled">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <a href="#moties" className="md3-button md3-button-filled text-center">
               Bekijk laatste stemmingen
             </a>
             <a
               href="https://opendata.tweedekamer.nl/documentatie/odata-api"
               target="_blank"
               rel="noreferrer"
-              className="md3-button md3-button-outlined"
+              className="md3-button md3-button-outlined text-center"
             >
               Over de databron ↗
             </a>
           </div>
         </div>
-        <div className="md3-tonal-card relative overflow-hidden p-8 sm:p-10">
+        <div className="md3-tonal-card relative overflow-hidden p-6 sm:p-10">
           <div className="absolute -right-10 -top-20 size-64 rounded-full border-[32px] border-[var(--md-primary)]/20" />
           <p className="relative text-sm font-medium opacity-80">
-            Laatste plenaire stemming
+            Lees je in, stem en volg de partijen die jou ForReal representen.
           </p>
           <h2 className="relative mt-4 max-w-md text-3xl font-bold leading-tight">
-            De laatste moties uit de Tweede Kamer
+            Partijen beloven veel. Hier zie je hoe ze echt stemmen.
           </h2>
           <div className="relative mt-8 flex items-end justify-between gap-4">
             <div>
-              <p className="text-5xl font-bold">78%</p>
+              <p className="text-4xl font-bold sm:text-5xl">17</p>
               <p className="mt-1 text-sm opacity-80">
-                van de uitgebrachte stemmen voor
+                partijen in de Tweede Kamer.
               </p>
             </div>
             <span className="rounded-full bg-white/60 px-3 py-1.5 text-xs font-bold text-[var(--md-on-primary-container)]">
-              Aangenomen
+              Op wie stem jij?
             </span>
           </div>
         </div>
@@ -114,6 +127,7 @@ export default async function Home() {
       </section> */}
 
       <MotionBrowser />
+      <MemberBrowser />
 
       <footer className="flex flex-col gap-3 border-t border-[var(--md-outline-variant)] py-8 text-sm text-[var(--md-on-surface-variant)] sm:flex-row sm:items-center sm:justify-between">
         <p>ForReal · Onafhankelijk inzicht in parlementaire data</p>
