@@ -51,12 +51,12 @@ export default async function Home() {
           </div>
         </div>
       </section>
-      <section className="grid gap-4 pb-12 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="grid gap-4 pb-12 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["/moties", "Moties", "Zoek moties, uitkomsten en stemmingen."],
-          ["/partijen", "Partijen", "Bekijk partijgedrag, het politieke spectrum en de gelijkenismatrix."],
-          ["/kamerleden", "Kamerleden", "Bekijk moties, stemmen en profielen."],
-          ["/toezeggingen", "Toezeggingen", "Volg beloften van bewindspersonen."],
+          ["/moties", "Moties", "Zoek naar moties of kijk simpelweg welke partijen voor of tegen stemden op verschillende thema's."],
+          ["/partijen", "Partijen", "Bekijk partijgedrag, wat voor moties ze indienen, hoe partijen verschillen op het politieke spectrum en de gelijkenismatrix."],
+          ["/kamerleden", "Kamerleden", "Leer meer over Tweede Kamerleden zoals hun opleiding, neventaken, betaalde reizen, en andere inkomsten uit andere bronnen."],
+          ["/kabinet", "Kabinet", "Volg waar het kabinet het niet eens is met elkaar en bekijk welke partijen nog wachten op toezeggingen van ministeries."],
         ].map(([href, title, description]) => (
           <Link key={href} href={href} className="md3-card block p-5 transition hover:-translate-y-0.5 hover:border-[var(--md-primary)] hover:shadow-md">
             <h2 className="text-lg font-bold text-[var(--md-on-surface)]">{title}</h2>

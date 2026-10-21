@@ -946,11 +946,11 @@ const portraitLogoPaths = new Set([
   "/images/agents/Mona_Keijzer,_January_2025.jpg",
 ]);
 
-function logoFitClass(logo: string, baseClass: string): string {
+export function logoFitClass(logo: string, baseClass: string): string {
   return `${baseClass} ${portraitLogoPaths.has(logo) ? "object-cover" : "object-contain"}`;
 }
 
-function partyLogo(party: string): string | undefined {
+export function partyLogo(party: string): string | undefined {
   const normalizedParty = party.toLocaleLowerCase("nl-NL").replace(/[^a-z0-9]/g, "");
   const aliases: Record<string, string> = {
     boerburgerbeweging: "bbb",
@@ -970,7 +970,7 @@ function partyLogo(party: string): string | undefined {
   return partyLogos[aliases[normalizedParty] ?? normalizedParty];
 }
 
-function canonicalPartyName(party: string): string {
+export function canonicalPartyName(party: string): string {
   const normalizedParty = party.toLocaleLowerCase("nl-NL").replace(/[^a-z0-9]/g, "");
   return normalizedParty === "groenlinkspvda" || normalizedParty === "pro" ? "PRO" : party;
 }

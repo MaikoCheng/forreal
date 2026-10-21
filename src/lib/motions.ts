@@ -266,6 +266,60 @@ export async function getMotions(startOfYear: string): Promise<Motion[]> {
   return motions;
 }
 
+export async function getCabinetMotions(startOfYear: string): Promise<Motion[]> {
+  const apiUrl = process.env.TWEEDEKAMER_API_URL ?? defaultApiUrl;
+  const cabinetParties = new Set(["CDA", "D66", "VVD"]);
+  const motions: Motion[] = [];
+  const pageSize = 250;
+  let skip = 0;
+
+  while (true) {
+    const query = new URLSearchParams({
+      $filter: `Soort eq 'Motie' and Verwijderd eq false and Datum ge ${startOfYear}`,
+      $orderby: "Datum desc",
+      $top: String(pageSize),
+      $skip: String(skip),
+      $select: "Id,Nummer,Onderwerp,Datum,Vergaderjaar",
+      $expand: "Besluit($select=Soort,Tekst;$expand=Stemming($select=Soort,FractieNaam))",
+    });
+    const response = await fetch(`${apiUrl.replace(/\/$/, "")}/Zaak?${query}`, {
+      next: { revalidate: 300 },
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) throw new Error(`Tweede Kamer API returned ${response.status}`);
+
+    const data = (await response.json()) as ODataResponse<ApiMotion>;
+    motions.push(...data.value.map((motion) => {
+      const votes = (motion.Besluit ?? [])
+        .filter(isVotingDecision)
+        .flatMap((decision) => decision.Stemming ?? [])
+        .flatMap((vote): MotionVote[] => {
+          if (!vote.FractieNaam || !cabinetParties.has(vote.FractieNaam) || vote.Soort === null) return [];
+          const stance = normalizeVoteStance(vote.Soort);
+          return stance
+            ? [{ party: vote.FractieNaam, personId: null, name: null, stance }]
+            : [];
+        });
+      return {
+        id: motion.Id,
+        number: motion.Nummer,
+        subject: motion.Onderwerp ?? "Onderwerp niet beschikbaar",
+        startedAt: motion.Datum,
+        status: null,
+        meetingYear: motion.Vergaderjaar,
+        hasVote: (motion.Besluit ?? []).some(isVotingDecision),
+        outcome: getOutcome(motion.Besluit),
+        submittingParties: [],
+        submittingMembers: [],
+        votes,
+      };
+    }).filter((motion) => new Set(motion.votes.map((vote) => vote.stance)).size > 1));
+    if (data.value.length < pageSize) break;
+    skip += pageSize;
+  }
+  return motions;
+}
+
 export async function getMemberProfiles(personIds: string[]): Promise<MemberProfile[]> {
   const uniqueIds = [...new Set(personIds)]
     .filter((id) => /^[0-9a-f-]{36}$/i.test(id))

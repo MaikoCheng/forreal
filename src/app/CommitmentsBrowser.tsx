@@ -114,7 +114,7 @@ export default function CommitmentsBrowser() {
             Regering
           </p>
           <h2 className="mt-2 break-words text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-            Regeringstoezeggingen
+            Kabinetstoezeggingen
           </h2>
           <p className="mt-2 text-sm text-slate-500">
             Beloften van bewindspersonen aan de Tweede Kamer

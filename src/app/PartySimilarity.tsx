@@ -65,6 +65,7 @@ export default function PartySimilarity() {
   const [startDate, setStartDate] = useState(latestElectionDate);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [hoveredCell, setHoveredCell] = useState<{ row: string; column: string } | null>(null);
 
   useEffect(() => {
     getCachedMotions(startDate === latestElectionDate ? latestElectionDate : earliestElectionDate)
@@ -182,7 +183,13 @@ export default function PartySimilarity() {
           <p className="border-b border-[var(--md-outline-variant)] bg-[var(--md-surface-container)] px-4 py-2 text-xs text-slate-600 sm:hidden">
             Veeg horizontaal om alle partijen te bekijken.
           </p>
-          <div className="overflow-x-auto" role="region" aria-label="Partijgelijkenismatrix" tabIndex={0}>
+          <div
+            className="overflow-x-auto"
+            role="region"
+            aria-label="Partijgelijkenismatrix"
+            tabIndex={0}
+            onMouseLeave={() => setHoveredCell(null)}
+          >
             <table className="w-full min-w-[680px] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
@@ -197,9 +204,25 @@ export default function PartySimilarity() {
                   {matrix[rowIndex].map((cell, columnIndex) => (
                     <td
                       key={parties[columnIndex]}
-                      className="px-3 py-3 text-center"
-                      style={cell.percentage === null ? undefined : {
-                        ...similarityCellStyle(cell.percentage, party === parties[columnIndex]),
+                      className="px-3 py-3 text-center transition-[filter,opacity] duration-150"
+                      onMouseEnter={() => setHoveredCell({
+                        row: party,
+                        column: parties[columnIndex],
+                      })}
+                      style={{
+                        ...(cell.percentage === null
+                          ? {}
+                          : similarityCellStyle(cell.percentage, party === parties[columnIndex])),
+                        opacity: hoveredCell
+                          && hoveredCell.row !== party
+                          && hoveredCell.column !== parties[columnIndex]
+                          ? 0.3
+                          : 1,
+                        filter: hoveredCell
+                          && hoveredCell.row !== party
+                          && hoveredCell.column !== parties[columnIndex]
+                          ? "brightness(0.65)"
+                          : undefined,
                       }}
                     >
                       {cell.percentage === null ? (

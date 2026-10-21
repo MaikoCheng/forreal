@@ -5,7 +5,7 @@ const navigation = [
   ["/moties", "Moties"],
   ["/partijen", "Partijen"],
   ["/kamerleden", "Kamerleden"],
-  ["/toezeggingen", "Toezeggingen"],
+  ["/kabinet", "Kabinet"],
 ] as const;
 
 export default function AppShell({
