@@ -1,5 +1,3 @@
-import { PDFParse } from "pdf-parse";
-
 export type Motion = {
   id: string;
   number: string;
@@ -55,6 +53,9 @@ type ApiDecision = {
 type ApiDocument = {
   Soort: string | null;
   DocumentNummer: string | null;
+  HuidigeDocumentVersie?: {
+    ExterneIdentifier: string | null;
+  };
 };
 
 type ApiZaakActor = {
@@ -63,7 +64,6 @@ type ApiZaakActor = {
 };
 
 const defaultApiUrl = "https://gegevensmagazijn.tweedekamer.nl/OData/v4/2.0";
-const unavailableMotionText = "De tekst van deze motie is niet beschikbaar.";
 
 function getOutcome(decisions: ApiDecision[] | undefined): Motion["outcome"] {
   const vote = decisions?.find((decision) => decision.BesluitSoort?.startsWith("Stemmen"));
@@ -138,7 +138,7 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
   const apiUrl = process.env.TWEEDEKAMER_API_URL ?? defaultApiUrl;
   const query = new URLSearchParams({
     $select: "Id,Nummer,Onderwerp,GestartOp,Status,Vergaderjaar",
-    $expand: "Besluit($select=BesluitSoort;$expand=Stemming($select=Soort,ActorFractie,ActorNaam)),Document($select=Soort,DocumentNummer),ZaakActor($select=ActorFractie,Relatie)",
+    $expand: "Besluit($select=BesluitSoort;$expand=Stemming($select=Soort,ActorFractie,ActorNaam)),Document($select=Soort,DocumentNummer;$expand=HuidigeDocumentVersie($select=ExterneIdentifier)),ZaakActor($select=ActorFractie,Relatie)",
   });
   const response = await fetch(
     `${apiUrl.replace(/\/$/, "")}/Zaak(${id})?${query}`,
@@ -173,7 +173,12 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
   )];
   const document = motion.Document?.find((item) => item.Soort === "Motie");
   const text = document?.DocumentNummer
-    ? await getMotionText(document.DocumentNummer)
+    ? await getMotionText(document.DocumentNummer, {
+        Nummer: motion.Nummer,
+        Onderwerp: motion.Onderwerp,
+        submittingParties,
+        externalIdentifier: document.HuidigeDocumentVersie?.ExterneIdentifier,
+      })
     : "De tekst van deze motie is niet beschikbaar.";
 
   return {
@@ -191,17 +196,54 @@ export async function getMotionDetail(id: string): Promise<MotionDetail> {
   };
 }
 
-async function getMotionText(documentNumber: string): Promise<string> {
-  try {
-    const response = await fetch(
-      `https://www.tweedekamer.nl/downloads/document?id=${encodeURIComponent(documentNumber)}`,
-      { next: { revalidate: 3600 }, signal: AbortSignal.timeout(15_000) },
-    );
-    if (!response.ok) {
-      console.warn(`Motie-PDF ${documentNumber} kon niet worden opgehaald: ${response.status}`);
-      return unavailableMotionText;
-    }
+async function getMotionText(
+  documentNumber: string,
+  motion: Pick<ApiMotion, "Nummer" | "Onderwerp"> & {
+    submittingParties: string[];
+    externalIdentifier: string | null | undefined;
+  },
+): Promise<string> {
+  const logContext = {
+    documentNumber,
+    motionNumber: motion.Nummer,
+    subject: motion.Onderwerp ?? "Onderwerp niet beschikbaar",
+    submittingParties: motion.submittingParties,
+  };
 
+  const urls = [
+    `https://www.tweedekamer.nl/downloads/document?id=${encodeURIComponent(documentNumber)}`,
+    ...(motion.externalIdentifier
+      ? [`https://zoek.officielebekendmakingen.nl/${encodeURIComponent(motion.externalIdentifier)}.pdf`]
+      : []),
+  ];
+
+  for (const [index, url] of urls.entries()) {
+    try {
+      const response = await fetch(url, {
+        next: { revalidate: 3600 },
+        headers: { Accept: "application/pdf" },
+        signal: AbortSignal.timeout(15_000),
+      });
+      const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+      if (!response.ok || !contentType.includes("pdf")) {
+        const log = {
+          ...logContext,
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          contentType: contentType || "onbekend",
+        };
+        if (index < urls.length - 1) {
+          console.warn("Primaire motiedocument-URL is niet beschikbaar; fallback wordt geprobeerd.", log);
+        } else {
+          console.error("Motiedocument kon niet als PDF worden opgehaald.", log);
+        }
+        continue;
+      }
+
+    const { createRequire } = await import("node:module");
+    const require = createRequire(import.meta.url);
+    const { PDFParse } = require("pdf-parse") as typeof import("pdf-parse");
     const parser = new PDFParse({ data: Buffer.from(await response.arrayBuffer()) });
     try {
       const result = await parser.getText();
@@ -211,17 +253,26 @@ async function getMotionText(documentNumber: string): Promise<string> {
         .replace(/\s*KST-[\s\S]*$/i, "")
         .replace(/^\s*--\s*\d+\s+of\s+\d+\s*--\s*$/gmi, "")
         .trim();
-      return motionText || unavailableMotionText;
+      if (!motionText) {
+        console.error("PDF bevat geen herkenbare motietekst.", logContext);
+      }
+      return motionText || "De tekst van deze motie is niet beschikbaar.";
     } finally {
       await parser.destroy();
     }
-  } catch (error) {
-    console.warn(`Motie-PDF ${documentNumber} kon niet worden verwerkt.`, error);
-    if (error instanceof DOMException && error.name === "TimeoutError") {
-      return "De tekst van deze motie kon niet op tijd worden opgehaald.";
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "TimeoutError") {
+        console.error("Ophalen van motietekst duurde te lang.", { ...logContext, url, error });
+      } else {
+        console.error("Motiedocument kon niet worden verwerkt.", { ...logContext, url, error });
+      }
+      if (index === urls.length - 1) {
+        return "De tekst van deze motie kon niet worden opgehaald.";
+      }
     }
-    return unavailableMotionText;
   }
+
+  return "De tekst van deze motie kon niet worden opgehaald.";
 }
 
 export function formatMotionDate(value: string | null): string {
