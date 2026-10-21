@@ -211,10 +211,10 @@ async function getMotionText(
   };
 
   const urls = [
-    `https://www.tweedekamer.nl/downloads/document?id=${encodeURIComponent(documentNumber)}`,
     ...(motion.externalIdentifier
       ? [`https://zoek.officielebekendmakingen.nl/${encodeURIComponent(motion.externalIdentifier)}.pdf`]
       : []),
+    `https://www.tweedekamer.nl/downloads/document?id=${encodeURIComponent(documentNumber)}`,
   ];
 
   for (const [index, url] of urls.entries()) {
