@@ -600,6 +600,22 @@ async function extractDocxText(data: Buffer): Promise<string> {
   return (await mammoth.extractRawText({ buffer: data })).value;
 }
 
+function extractOfficialPublicationText(xml: string): string {
+  const text = [...xml.matchAll(/<al(?:\s[^>]*)?>([\s\S]*?)<\/al>/gi)]
+    .map((match) => match[1]
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;|&#160;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&quot;/gi, '"')
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/\s+/g, " ")
+      .trim())
+    .filter(Boolean)
+    .join("\n");
+  return text;
+}
+
 async function getMotionText(
   documentNumber: string,
   motion: Pick<ApiMotion, "Nummer" | "Onderwerp"> & {
@@ -616,7 +632,10 @@ async function getMotionText(
 
   const urls = [
     ...(motion.externalIdentifier
-      ? [`https://zoek.officielebekendmakingen.nl/${encodeURIComponent(motion.externalIdentifier)}.pdf`]
+      ? [
+        `https://zoek.officielebekendmakingen.nl/${encodeURIComponent(motion.externalIdentifier)}.xml`,
+        `https://zoek.officielebekendmakingen.nl/${encodeURIComponent(motion.externalIdentifier)}.pdf`,
+      ]
       : []),
     `https://www.tweedekamer.nl/downloads/document?id=${encodeURIComponent(documentNumber)}`,
   ];
@@ -631,7 +650,8 @@ async function getMotionText(
       const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
       const isPdf = contentType.includes("pdf");
       const isDocx = contentType.includes("wordprocessingml.document");
-      if (!response.ok || (!isPdf && !isDocx)) {
+      const isXml = contentType.includes("xml");
+      if (!response.ok || (!isPdf && !isDocx && !isXml)) {
         const log = {
           ...logContext,
           url,
@@ -642,15 +662,16 @@ async function getMotionText(
         if (index < urls.length - 1) {
           console.warn("Primaire motiedocument-URL is niet beschikbaar; fallback wordt geprobeerd.", log);
         } else {
-          console.error("Motiedocument kon niet als PDF of DOCX worden opgehaald.", log);
+          console.error("Motiedocument kon niet als XML, PDF of DOCX worden opgehaald.", log);
         }
         continue;
       }
 
-      const documentData = Buffer.from(await response.arrayBuffer());
-      const rawText = isPdf
-        ? await extractPdfText(documentData)
-        : await extractDocxText(documentData);
+      const rawText = isXml
+        ? extractOfficialPublicationText(await response.text())
+        : isPdf
+          ? await extractPdfText(Buffer.from(await response.arrayBuffer()))
+          : await extractDocxText(Buffer.from(await response.arrayBuffer()));
       const text = rawText.replace(/\r\n/g, "\n").trim();
       const motionStart = text.search(/\bDe\s+kamer\b/i);
       const motionText = (motionStart >= 0 ? text.slice(motionStart) : text)
