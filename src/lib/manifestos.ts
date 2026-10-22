@@ -140,6 +140,13 @@ async function buildManifestoScores(): Promise<ManifestoScores> {
   const directory = path.join(process.cwd(), "data", "manifestos");
   const entries = await Promise.all(
     Object.entries(partyFiles).map(async ([party, filename]) => {
+      const runtime = globalThis as typeof globalThis & { DOMMatrix?: unknown };
+      if (!runtime.DOMMatrix) {
+        Object.defineProperty(runtime, "DOMMatrix", {
+          configurable: true,
+          value: class DOMMatrix {},
+        });
+      }
       const { PDFParse } = await import("pdf-parse");
       const parser = new PDFParse({
         data: await readFile(path.join(directory, filename)),

@@ -579,6 +579,13 @@ function getSubmittingMembers(actors: ApiZaakActor[] | undefined): MotionMember[
 }
 
 async function extractPdfText(data: Buffer): Promise<string> {
+  const runtime = globalThis as typeof globalThis & { DOMMatrix?: unknown };
+  if (!runtime.DOMMatrix) {
+    Object.defineProperty(runtime, "DOMMatrix", {
+      configurable: true,
+      value: class DOMMatrix {},
+    });
+  }
   const { PDFParse } = await import("pdf-parse");
   const parser = new PDFParse({ data });
   try {
