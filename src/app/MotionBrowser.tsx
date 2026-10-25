@@ -1392,7 +1392,7 @@ export default function MotionBrowser({
 
             {selectedPartyData && (
               <div className="mt-8 min-w-0 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
-                <div className="min-w-0">
+                <div className="order-2 min-w-0 lg:order-1">
                   <div className="mb-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <h3 className="text-xl font-bold text-slate-950">
@@ -1481,6 +1481,7 @@ export default function MotionBrowser({
                           key={motion.id}
                           type="button"
                           onClick={() => openMotion(motion)}
+                          aria-label={`Bekijk details van motie ${motion.number}: ${motion.subject}`}
                           className="flex w-full items-center justify-between gap-4 p-4 text-left transition hover:bg-blue-50/40 cursor-pointer"
                         >
                           <span className="min-w-0">
@@ -1589,7 +1590,7 @@ export default function MotionBrowser({
                     </p>
                   )}
                 </div>
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <div className="order-1 overflow-hidden rounded-2xl border border-slate-200 bg-white lg:order-2">
                   <div className="p-5 pb-4">
                     <h3 className="font-bold text-slate-950">Themaprofiel</h3>
                     <p className="mt-1 text-xs leading-5 text-slate-500">
@@ -2052,7 +2053,9 @@ export default function MotionBrowser({
             </nav>
           </div>
         )}
-        {(isDetailLoading || detailError || selectedMotion) && (
+      </section>}
+
+      {(isDetailLoading || detailError || selectedMotion) && (
           <div
             className="md3-dialog-scrim fixed inset-0 z-50 grid place-items-center p-4"
             role="dialog"
@@ -2240,7 +2243,6 @@ export default function MotionBrowser({
             </div>
           </div>
         )}
-      </section>}
     </>
   );
 }
