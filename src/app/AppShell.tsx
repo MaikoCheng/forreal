@@ -24,6 +24,7 @@ export default function AppShell({
         </Link>
         <nav className="order-3 -mx-1 flex w-[calc(100%+0.5rem)] snap-x gap-5 overflow-x-auto px-1 pb-1 text-sm font-medium text-[var(--md-on-surface-variant)] md:order-none md:w-auto md:gap-6 md:overflow-visible md:px-0 md:pb-0" aria-label="Hoofdnavigatie">
           <Link className={activePath === "/" ? "text-[var(--md-primary)]" : "transition hover:text-[var(--md-primary)]"} href="/">Overzicht</Link>
+          <Link className={activePath === "/jouw-profiel" ? "text-[var(--md-primary)]" : "transition hover:text-[var(--md-primary)]"} href="/jouw-profiel">Jouw profiel</Link>
           {navigation.map(([href, label]) => (
             <Link key={href} className={activePath === href ? "text-[var(--md-primary)]" : "transition hover:text-[var(--md-primary)]"} href={href}>{label}</Link>
           ))}
